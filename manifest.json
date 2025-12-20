@@ -1,0 +1,20 @@
+{
+  "name": "Gestión Pro Dashboard",
+  "short_name": "Gestión Pro",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f8f5",
+  "theme_color": "#f9f506",
+  "icons": [
+    {
+      "src": "https://lh3.googleusercontent.com/aida-public/AB6AXuBGWF15p11GkaBV0E3OQbmRCp7KYPAQF8xW1Y0L7EOWZlDoHUk218Pq3zsdMuIJ7uwyUv36d_eSHRKroAqpcbQxleTYHfg4VKHYYUmXYkiDMWSxzjaiLCBHbgDXkG5xe9MkjwwHjT74kBHzN5Jt_2foN-SHiNkaUaSHaKgdLM0h6teFtxk1zA-_b4hEWaFfBhbIqwU1tyJ4XuWVOas6zWg8FPe-HTUBMJwngOMT5YBN5g6qUrrbNzb9GJ1km_4lf8Sfckdxbo2QfvA",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://lh3.googleusercontent.com/aida-public/AB6AXuBGWF15p11GkaBV0E3OQbmRCp7KYPAQF8xW1Y0L7EOWZlDoHUk218Pq3zsdMuIJ7uwyUv36d_eSHRKroAqpcbQxleTYHfg4VKHYYUmXYkiDMWSxzjaiLCBHbgDXkG5xe9MkjwwHjT74kBHzN5Jt_2foN-SHiNkaUaSHaKgdLM0h6teFtxk1zA-_b4hEWaFfBhbIqwU1tyJ4XuWVOas6zWg8FPe-HTUBMJwngOMT5YBN5g6qUrrbNzb9GJ1km_4lf8Sfckdxbo2QfvA",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
