@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 import { db } from '../services/storage';
 import { supabase } from '../services/supabase';
 import { Project, Task, TeamMember, CalendarEvent } from '../types';
@@ -41,12 +42,17 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth(); // Get user from AuthContext
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // ... (Modal State and Confirm State kept same, assuming I don't need to touch them explicitly in this block unless I reach line limit)
+  // Actually I need to be careful with line matching. 
+  // I will replace from start of AppProvider to end of useEffect.
 
   // Modal State
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
@@ -61,6 +67,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const loadData = async () => {
+    if (!user) return; // Guard: Don't fetch if not logged in
     try {
       setIsLoading(true);
       const [p, t, tm, e] = await Promise.all([
@@ -82,37 +89,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   useEffect(() => {
-    loadData();
+    if (user) {
+      loadData();
 
-    // Subscribe to Realtime changes
-    const channel = supabase
-      .channel('db_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
-        console.log('Realtime change detected in projects');
-        loadData();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
-        console.log('Realtime change detected in tasks');
-        loadData();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, () => {
-        console.log('Realtime change detected in team_members');
-        loadData();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_events' }, () => {
-        console.log('Realtime change detected in calendar_events');
-        loadData();
-      })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('Supabase Realtime connected');
-        }
-      });
+      // Subscribe to Realtime changes
+      const channel = supabase
+        .channel('db_changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => loadData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => loadData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, () => loadData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_events' }, () => loadData())
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('Supabase Realtime connected');
+          }
+        });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } else {
+      // Clear data if logged out
+      setProjects([]);
+      setTasks([]);
+      setTeam([]);
+      setEvents([]);
+      setIsLoading(false);
+    }
+  }, [user]);
 
   const notify = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
