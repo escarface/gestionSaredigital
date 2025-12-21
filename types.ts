@@ -54,6 +54,14 @@ export interface TeamMember {
   email: string;
 }
 
+export interface MeetingNote {
+  id: string;
+  projectId: string;
+  content: string;
+  createdAt: string;
+  createdBy?: string; // Optional, usually managed by backend
+}
+
 export interface CalendarEvent {
   id: string;
   title: string;

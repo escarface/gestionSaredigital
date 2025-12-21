@@ -1,9 +1,19 @@
 
-import { Project, Task, TeamMember, CalendarEvent } from '../types';
+import { Project, Task, TeamMember, CalendarEvent, MeetingNote } from '../types';
 import { supabase, handleSupabaseError } from './supabase';
 
 class StorageService {
   // Helper para convertir datos de Supabase al formato de la app
+  private mapMeetingNote(dbNote: any): MeetingNote {
+    return {
+      id: dbNote.id,
+      projectId: dbNote.project_id,
+      content: dbNote.content,
+      createdAt: dbNote.created_at,
+      createdBy: dbNote.created_by
+    };
+  }
+
   private mapProject(dbProject: any): Project {
     return {
       id: dbProject.id,
@@ -153,7 +163,7 @@ class StorageService {
       // Fallback a localStorage
       const projects = JSON.parse(localStorage.getItem('gestion_pro_projects') || '[]');
       const project = projects.find((p: any) => p.id === id);
-      
+
       if (project) {
         // Borrar tareas asociadas en localStorage
         const tasks = JSON.parse(localStorage.getItem('gestion_pro_tasks') || '[]');
@@ -292,7 +302,7 @@ class StorageService {
           .from('tasks')
           .update({ assignee: null })
           .eq('assignee', member.avatar);
-          
+
         if (tasksError) console.warn('Error unassigning tasks:', tasksError);
 
         // 3. Remove from projects (Projects use avatar in members array)
@@ -300,30 +310,30 @@ class StorageService {
         // we will fetch projects containing this member and update them.
         // Or better, use a Postgres function if available. But for now, let's do read-modify-write
         // which matches the existing pattern in this service (though not ideal for concurrency, it works for this scale).
-        
+
         const { data: projectsWithMember } = await supabase
-            .from('projects')
-            .select('*')
-            .contains('members', [member.avatar]);
+          .from('projects')
+          .select('*')
+          .contains('members', [member.avatar]);
 
         if (projectsWithMember && projectsWithMember.length > 0) {
-            for (const project of projectsWithMember) {
-                const newMembers = (project.members || []).filter((m: string) => m !== member.avatar);
-                await supabase
-                    .from('projects')
-                    .update({ members: newMembers })
-                    .eq('id', project.id);
-            }
+          for (const project of projectsWithMember) {
+            const newMembers = (project.members || []).filter((m: string) => m !== member.avatar);
+            await supabase
+              .from('projects')
+              .update({ members: newMembers })
+              .eq('id', project.id);
+          }
         }
 
         // 4. Revoke Access (Delete Profile)
         if (member.email) {
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .delete()
-                .eq('email', member.email);
-            
-            if (profileError) console.warn('Error deleting profile:', profileError);
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('email', member.email);
+
+          if (profileError) console.warn('Error deleting profile:', profileError);
         }
       }
 
@@ -338,12 +348,12 @@ class StorageService {
       const team = JSON.parse(localStorage.getItem('gestion_pro_team') || '[]');
       const filtered = team.filter((t: any) => t.id !== id);
       localStorage.setItem('gestion_pro_team', JSON.stringify(filtered));
-      
+
       // Fallback cleanup for local storage would be complex here, 
       // but assuming Supabase is primary.
     }
   }
-  
+
   // --- Events ---
   async getEvents(): Promise<CalendarEvent[]> {
     try {
@@ -374,6 +384,53 @@ class StorageService {
       const events = JSON.parse(localStorage.getItem('gestion_pro_events') || '[]');
       events.push(event);
       localStorage.setItem('gestion_pro_events', JSON.stringify(events));
+    }
+  }
+
+  // --- Meeting Notes ---
+  async getMeetingNotes(projectId: string): Promise<MeetingNote[]> {
+    try {
+      const { data, error } = await supabase
+        .from('meeting_notes')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data || []).map(this.mapMeetingNote);
+    } catch (e) {
+      console.warn("Error fetching notes:", e);
+      return [];
+    }
+  }
+
+  async saveMeetingNote(note: Partial<MeetingNote>) {
+    try {
+      const { error } = await supabase.from('meeting_notes').insert({
+        id: note.id,
+        project_id: note.projectId,
+        content: note.content,
+        // created_by is handled by RLS default or we can send it if needed, but normally auth.uid()
+      });
+
+      if (error) throw error;
+    } catch (e) {
+      console.error("Error saving note:", e);
+      throw e;
+    }
+  }
+
+  async deleteMeetingNote(id: string) {
+    try {
+      const { error } = await supabase
+        .from('meeting_notes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    } catch (e) {
+      console.error("Error deleting note:", e);
+      throw e;
     }
   }
 }

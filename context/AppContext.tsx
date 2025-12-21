@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../services/storage';
+import { supabase } from '../services/supabase';
 import { Project, Task, TeamMember, CalendarEvent } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import Toast from '../components/Toast';
@@ -11,7 +12,7 @@ interface AppContextType {
   team: TeamMember[];
   events: CalendarEvent[];
   isLoading: boolean;
-  
+
   // Actions
   addProject: (project: Partial<Project>) => Promise<void>;
   editProject: (project: Project) => Promise<void>;
@@ -24,13 +25,13 @@ interface AppContextType {
   addTeamMember: (member: Partial<TeamMember>) => Promise<void>;
   removeTeamMember: (id: string) => Promise<void>;
   notify: (msg: string, type?: 'success' | 'error') => void;
-  
+
   // Modal State
   isProjectModalOpen: boolean;
   editingProject: Project | undefined;
   openProjectModal: (project?: Project) => void;
   closeProjectModal: () => void;
-  
+
   // Confirmation State
   confirmConfig: { isOpen: boolean; title: string; message: string; onConfirm: () => void };
   askConfirmation: (title: string, message: string, onConfirm: () => void) => void;
@@ -44,19 +45,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Modal State
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
-  
+
   // Confirmation State
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
     title: '',
     message: '',
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   const loadData = async () => {
@@ -82,6 +83,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     loadData();
+
+    // Subscribe to Realtime changes
+    const channel = supabase
+      .channel('db_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
+        console.log('Realtime change detected in projects');
+        loadData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
+        console.log('Realtime change detected in tasks');
+        loadData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, () => {
+        console.log('Realtime change detected in team_members');
+        loadData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_events' }, () => {
+        console.log('Realtime change detected in calendar_events');
+        loadData();
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Supabase Realtime connected');
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const notify = (message: string, type: 'success' | 'error' = 'success') => {
@@ -169,12 +199,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateTaskStatus = async (taskId: string, newStatus: Task['status']) => {
     const task = tasks.find(t => t.id === taskId);
     if (task) {
-        const updated = { ...task, status: newStatus };
-        try {
-          await db.updateTask(updated);
-          await loadData();
-          notify(`Task status: ${newStatus}`);
-        } catch (e) { notify("Error updating status", "error"); }
+      const updated = { ...task, status: newStatus };
+      try {
+        await db.updateTask(updated);
+        await loadData();
+        notify(`Task status: ${newStatus}`);
+      } catch (e) { notify("Error updating status", "error"); }
     }
   };
 
@@ -205,7 +235,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   return (
-    <AppContext.Provider value={{ 
+    <AppContext.Provider value={{
       projects, tasks, team, events, isLoading,
       addProject, editProject, deleteProject, addTask, editTask, deleteTask, updateTaskStatus, addEvent, addTeamMember, removeTeamMember, notify,
       isProjectModalOpen, editingProject, openProjectModal, closeProjectModal,
@@ -213,10 +243,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }}>
       {children}
       {toast && (
-        <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast(null)} 
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
     </AppContext.Provider>

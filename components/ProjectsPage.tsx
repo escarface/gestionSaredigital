@@ -1,9 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Smartphone, Monitor, Megaphone, Plus, MoreHorizontal, Edit, Trash2, Calendar, Clock } from 'lucide-react';
+import { Smartphone, Monitor, Megaphone, Plus, MoreHorizontal, Edit, Trash2, Calendar, Clock, StickyNote } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Project } from '../types';
+import MeetingNotesModal from './MeetingNotesModal';
 
 interface ProjectsPageProps {
   onOpenNewProject?: () => void;
@@ -15,7 +16,17 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
   const { user } = useAuth();
   const [filter, setFilter] = useState('All');
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+
+  // Meeting Notes State
+  const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
+  const [selectedProjectForNotes, setSelectedProjectForNotes] = useState<Project | null>(null);
+
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const handleOpenNotes = (project: Project) => {
+    setSelectedProjectForNotes(project);
+    setIsNotesModalOpen(true);
+  };
 
   const canEdit = user?.role !== 'Viewer';
 
@@ -55,15 +66,15 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  const filteredProjects = filter === 'All' 
-    ? projects 
+  const filteredProjects = filter === 'All'
+    ? projects
     : projects.filter(p => p.status === filter);
 
   const filters = ['All', 'In Progress', 'Review', 'Planning', 'Completed'];
 
   const handleDelete = (project: Project) => {
     askConfirmation(
-      "Delete Project", 
+      "Delete Project",
       `Are you sure you want to delete "${project.name}"? This action cannot be undone.`,
       () => deleteProject(project.id)
     );
@@ -78,7 +89,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
           <p className="text-text-muted text-sm">Manage your ongoing projects and deadlines</p>
         </div>
         {canEdit && (
-          <button 
+          <button
             onClick={() => openProjectModal()}
             className="flex items-center justify-center rounded-full px-6 h-10 bg-primary hover:bg-[#e6e205] transition-colors text-black text-sm font-bold tracking-wide shadow-sm active:scale-95 duration-150"
           >
@@ -94,11 +105,10 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
-              filter === f 
-                ? 'bg-text-main text-white' 
-                : 'bg-white border border-border-color text-text-muted hover:border-text-muted'
-            }`}
+            className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${filter === f
+              ? 'bg-text-main text-white'
+              : 'bg-white border border-border-color text-text-muted hover:border-text-muted'
+              }`}
           >
             {f}
           </button>
@@ -115,28 +125,38 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
                 </span>
               </div>
               <div className="flex gap-2 items-center relative">
-                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(project.status)}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(project.status)}`}>
                   {project.status}
                 </span>
                 {canEdit && (
                   <>
-                    <button 
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenNotes(project);
+                      }}
+                      className="p-1.5 rounded-full hover:bg-primary/10 text-text-muted hover:text-primary transition-colors"
+                      title="Meeting Notes"
+                    >
+                      <StickyNote size={20} />
+                    </button>
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setActiveMenu(activeMenu === project.id ? null : project.id);
                       }}
                       className="p-1 rounded-full hover:bg-gray-100 text-text-muted hover:text-text-main transition-colors"
                     >
-                        <MoreHorizontal size={20} />
+                      <MoreHorizontal size={20} />
                     </button>
-                    
+
                     {/* Dropdown Menu */}
                     {activeMenu === project.id && (
-                      <div 
+                      <div
                         ref={menuRef}
                         className="absolute right-0 top-8 w-40 bg-white rounded-xl shadow-xl border border-border-color z-10 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
                       >
-                        <button 
+                        <button
                           onClick={() => {
                             openProjectModal(project);
                             setActiveMenu(null);
@@ -145,7 +165,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
                         >
                           <Edit size={16} /> Edit
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDelete(project)}
                           className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-red-50 text-red-600 flex items-center gap-2"
                         >
@@ -157,21 +177,21 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
                 )}
               </div>
             </div>
-            
+
             <h3 className="text-lg font-bold text-text-main mb-1">{project.name}</h3>
             <p className="text-text-muted text-sm mb-4">Client: {project.client}</p>
             {project.description && (
-                <p className="text-text-main/70 text-xs mb-4 line-clamp-2">{project.description}</p>
+              <p className="text-text-main/70 text-xs mb-4 line-clamp-2">{project.description}</p>
             )}
-            
+
             <div className="mb-4 mt-auto">
               <div className="flex justify-between text-xs font-medium mb-2">
                 <span className="text-text-muted">Progress</span>
                 <span className="text-text-main">{project.progress}%</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2">
-                <div 
-                  className="bg-primary h-2 rounded-full transition-all duration-500" 
+                <div
+                  className="bg-primary h-2 rounded-full transition-all duration-500"
                   style={{ width: `${project.progress}%` }}
                 ></div>
               </div>
@@ -204,6 +224,14 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
           </div>
         ))}
       </div>
+
+      {selectedProjectForNotes && (
+        <MeetingNotesModal
+          project={selectedProjectForNotes}
+          isOpen={isNotesModalOpen}
+          onClose={() => setIsNotesModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
