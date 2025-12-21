@@ -16,12 +16,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
   const { user } = useAuth();
 
   return (
-    <aside className="w-64 flex-shrink-0 border-r border-border-color bg-background-light hidden md:flex flex-col justify-between p-4 h-full">
+    <aside className="w-64 flex-shrink-0 border-r border-border-color bg-background-light flex flex-col justify-between p-4 h-full">
       <div className="flex flex-col gap-6">
         {/* User/Logo Area */}
         <div className="flex items-center gap-3 px-2">
-          <div 
-            className="bg-center bg-no-repeat bg-cover rounded-full size-12 bg-gray-200 border border-border-color" 
+          <div
+            className="bg-center bg-no-repeat bg-cover rounded-full size-12 bg-gray-200 border border-border-color"
             style={{ backgroundImage: `url("${LOGO_URL}")` }}
           />
           <div className="flex flex-col">
@@ -38,15 +38,14 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
               <button
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
-                className={`flex w-full items-center gap-3 px-4 py-3 rounded-full transition-colors group ${
-                  isActive 
-                    ? 'bg-primary/20' 
+                className={`flex w-full items-center gap-3 px-4 py-3 rounded-full transition-colors group ${isActive
+                    ? 'bg-primary/20'
                     : 'hover:bg-black/5'
-                }`}
+                  }`}
               >
-                <item.icon 
+                <item.icon
                   size={20}
-                  className={`group-hover:text-text-main ${isActive ? 'text-text-main' : 'text-text-muted'}`} 
+                  className={`group-hover:text-text-main ${isActive ? 'text-text-main' : 'text-text-muted'}`}
                 />
                 <p className={`text-sm font-bold ${isActive ? 'text-text-main' : 'text-text-main font-medium text-opacity-80'}`}>
                   {item.label}
@@ -72,7 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
         </div>
 
         {user?.role !== 'Viewer' && (
-          <button 
+          <button
             onClick={() => openProjectModal()}
             className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-full h-12 bg-primary hover:bg-[#e6e205] transition-colors text-black text-sm font-bold tracking-wide shadow-sm hover:shadow-md active:scale-95 duration-150"
           >

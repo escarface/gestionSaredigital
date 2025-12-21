@@ -277,6 +277,57 @@ class StorageService {
 
   async deleteTeamMember(id: string) {
     try {
+      // 1. Get member details to find email and avatar (used as ID in this app)
+      const { data: member, error: fetchError } = await supabase
+        .from('team_members')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      if (member) {
+        // 2. Unassign tasks (Tasks use avatar as assignee identifier)
+        const { error: tasksError } = await supabase
+          .from('tasks')
+          .update({ assignee: null })
+          .eq('assignee', member.avatar);
+          
+        if (tasksError) console.warn('Error unassigning tasks:', tasksError);
+
+        // 3. Remove from projects (Projects use avatar in members array)
+        // Since we can't easily remove from array in one SQL query without complex logic,
+        // we will fetch projects containing this member and update them.
+        // Or better, use a Postgres function if available. But for now, let's do read-modify-write
+        // which matches the existing pattern in this service (though not ideal for concurrency, it works for this scale).
+        
+        const { data: projectsWithMember } = await supabase
+            .from('projects')
+            .select('*')
+            .contains('members', [member.avatar]);
+
+        if (projectsWithMember && projectsWithMember.length > 0) {
+            for (const project of projectsWithMember) {
+                const newMembers = (project.members || []).filter((m: string) => m !== member.avatar);
+                await supabase
+                    .from('projects')
+                    .update({ members: newMembers })
+                    .eq('id', project.id);
+            }
+        }
+
+        // 4. Revoke Access (Delete Profile)
+        if (member.email) {
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .delete()
+                .eq('email', member.email);
+            
+            if (profileError) console.warn('Error deleting profile:', profileError);
+        }
+      }
+
+      // 5. Delete the team member
       const { error } = await supabase
         .from('team_members')
         .delete()
@@ -287,6 +338,9 @@ class StorageService {
       const team = JSON.parse(localStorage.getItem('gestion_pro_team') || '[]');
       const filtered = team.filter((t: any) => t.id !== id);
       localStorage.setItem('gestion_pro_team', JSON.stringify(filtered));
+      
+      // Fallback cleanup for local storage would be complex here, 
+      // but assuming Supabase is primary.
     }
   }
   
