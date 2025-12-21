@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signOut: () => Promise<void>;
-  loginAsGuest: () => void;
+
   signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
   signUpWithEmail: (email: string, password: string, name: string, role?: 'Admin' | 'Editor' | 'Viewer') => Promise<{ error: string | null }>;
   setUser: (user: User | null) => void;
@@ -109,7 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.user && !data.user.identities?.length) {
         return { error: 'This email is already registered' };
       }
-      
+
       return { error: null };
     } catch (e: any) {
       return { error: e.message || 'Error signing up' };
@@ -121,31 +121,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   };
 
-  const loginAsGuest = () => {
-    // Modo demo - guest sin Supabase
-    const guestUser: User = {
-      id: 'guest-demo-123',
-      name: 'Guest Viewer',
-      email: 'guest@demo.com',
-      avatar: DEFAULT_AVATAR,
-      role: 'Viewer',
-    };
-    setUser(guestUser);
-  };
+
 
   const handleSetUser = (newUser: User | null) => {
     setUser(newUser);
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      loading, 
-      signOut, 
-      loginAsGuest, 
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      signOut,
+
       signInWithEmail,
       signUpWithEmail,
-      setUser: handleSetUser 
+      setUser: handleSetUser
     }}>
       {children}
     </AuthContext.Provider>

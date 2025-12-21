@@ -4,9 +4,7 @@ const STATIC_URLS = [
   '/index.html',
   '/manifest.json',
   '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap'
+  '/icons/icon-512.png'
 ];
 
 self.addEventListener('install', event => {

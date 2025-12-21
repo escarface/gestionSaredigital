@@ -5,7 +5,7 @@ import { LOGO_URL, DEFAULT_AVATAR } from '../constants';
 import { ArrowRight, Loader2, AlertCircle, Shield, User as UserIcon, Eye } from 'lucide-react';
 
 const AuthPage: React.FC = () => {
-  const { signInWithEmail, signUpWithEmail, loginAsGuest } = useAuth();
+  const { signInWithEmail, signUpWithEmail } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -55,8 +55,8 @@ const AuthPage: React.FC = () => {
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 selection:bg-primary/20 font-display">
       <div className="w-full max-w-[420px] animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="mb-10 text-center">
-          <div 
-            className="mx-auto size-14 bg-center bg-no-repeat bg-cover rounded-2xl shadow-sm mb-6 border border-border-color/50" 
+          <div
+            className="mx-auto size-14 bg-center bg-no-repeat bg-cover rounded-2xl shadow-sm mb-6 border border-border-color/50"
             style={{ backgroundImage: `url("${LOGO_URL}")` }}
           />
           <h1 className="text-2xl font-bold text-text-main tracking-tight">
@@ -85,8 +85,8 @@ const AuthPage: React.FC = () => {
           {!isLogin && (
             <div className="space-y-1.5">
               <label className="text-[13px] font-semibold text-text-main ml-0.5">Name</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 required={!isLogin}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -98,8 +98,8 @@ const AuthPage: React.FC = () => {
 
           <div className="space-y-1.5">
             <label className="text-[13px] font-semibold text-text-main ml-0.5">Email</label>
-            <input 
-              type="email" 
+            <input
+              type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -112,8 +112,8 @@ const AuthPage: React.FC = () => {
             <div className="flex justify-between items-center ml-0.5">
               <label className="text-[13px] font-semibold text-text-main">Password</label>
             </div>
-            <input 
-              type="password" 
+            <input
+              type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -135,9 +135,8 @@ const AuthPage: React.FC = () => {
                     key={r.id}
                     type="button"
                     onClick={() => setRole(r.id as any)}
-                    className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all gap-1.5 ${
-                      role === r.id ? 'border-primary bg-primary/5' : 'border-border-color bg-white hover:border-gray-300'
-                    }`}
+                    className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all gap-1.5 ${role === r.id ? 'border-primary bg-primary/5' : 'border-border-color bg-white hover:border-gray-300'
+                      }`}
                   >
                     <r.icon size={20} className={role === r.id ? 'text-text-main' : 'text-text-muted'} />
                     <span className="text-[10px] font-bold uppercase">{r.id}</span>
@@ -147,8 +146,8 @@ const AuthPage: React.FC = () => {
             </div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={loading}
             className="mt-4 w-full bg-text-main hover:bg-black text-white font-bold py-3 rounded-xl shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed h-[48px]"
           >
@@ -160,11 +159,11 @@ const AuthPage: React.FC = () => {
             )}
           </button>
         </form>
-        
+
         <div className="mt-8 pt-6 border-t border-border-color text-center space-y-4">
           <p className="text-text-muted text-sm font-medium">
             {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
-            <button 
+            <button
               type="button"
               onClick={() => { setIsLogin(!isLogin); setError(''); setSuccess(''); }}
               className="text-text-main font-bold hover:underline decoration-primary decoration-2 underline-offset-4 transition-all"
@@ -172,23 +171,8 @@ const AuthPage: React.FC = () => {
               {isLogin ? 'Sign up' : 'Sign in'}
             </button>
           </p>
-          
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border-color"></div>
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="px-3 bg-white text-text-muted font-medium">OR</span>
-            </div>
-          </div>
 
-          <button
-            type="button"
-            onClick={loginAsGuest}
-            className="w-full py-2.5 px-4 rounded-xl border-2 border-border-color bg-white hover:bg-gray-50 text-text-main font-semibold text-sm transition-all"
-          >
-            Continue as Guest (Demo Mode)
-          </button>
+
         </div>
       </div>
     </div>
