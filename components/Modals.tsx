@@ -73,7 +73,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
   return (
     <div className={`fixed inset-0 z-[60] flex justify-end transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
       <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={onClose}></div>
-      
+
       <div className={`relative w-full max-w-lg bg-white h-full shadow-2xl flex flex-col transform transition-transform duration-300 ease-out border-l border-border-color ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         {/* Header del Panel */}
         <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
@@ -156,7 +156,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
 
           {/* Actividad Reciente */}
           <div className="space-y-4 pt-4">
-             <h4 className="text-[11px] font-bold text-text-muted uppercase tracking-widest flex items-center gap-2">
+            <h4 className="text-[11px] font-bold text-text-muted uppercase tracking-widest flex items-center gap-2">
               Activity <div className="h-px flex-1 bg-gray-100"></div>
             </h4>
             <div className="flex items-start gap-3">
@@ -174,7 +174,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
         {/* Footer del Panel */}
         <div className="px-8 py-6 bg-gray-50 border-t border-gray-100 flex gap-3">
           {canEdit && (
-            <button 
+            <button
               onClick={() => {
                 onEdit(task);
                 onClose();
@@ -184,7 +184,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
               <Edit3 size={18} /> Edit Task
             </button>
           )}
-          <button 
+          <button
             onClick={onClose}
             className={`px-6 py-3.5 bg-white border border-border-color text-text-main rounded-xl font-bold text-sm hover:bg-gray-100 transition-all active:scale-95 ${!canEdit ? 'w-full' : ''}`}
           >
@@ -217,13 +217,13 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, on
           <h3 className="text-lg font-bold text-text-main mb-2">{title}</h3>
           <p className="text-text-muted text-sm mb-6">{message}</p>
           <div className="flex gap-3 w-full">
-            <button 
+            <button
               onClick={onClose}
               className="flex-1 py-2.5 rounded-xl border border-border-color font-bold text-text-muted hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
-            <button 
+            <button
               onClick={onConfirm}
               className="flex-1 py-2.5 rounded-xl bg-red-600 font-bold text-white hover:bg-red-700 transition-colors shadow-sm"
             >
@@ -274,7 +274,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, onS
       });
     }
   }, [initialData, isOpen]);
-  
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'In Progress': return 'bg-primary/20 text-text-main';
@@ -305,44 +305,44 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, onS
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
           <label className="block text-xs font-bold text-text-muted uppercase mb-1">Project Name</label>
-          <input 
+          <input
             required
-            type="text" 
+            type="text"
             value={formData.name}
             onChange={e => handleChange('name', e.target.value)}
             className="w-full rounded-xl border-border-color bg-background-light px-4 py-2.5 text-sm font-medium focus:border-primary focus:ring-primary"
             placeholder="e.g. Website Redesign"
           />
         </div>
-        
+
         <div>
           <label className="block text-xs font-bold text-text-muted uppercase mb-1">Client</label>
-          <input 
-              required
-              type="text" 
-              value={formData.client}
-              onChange={e => handleChange('client', e.target.value)}
-              className="w-full rounded-xl border-border-color bg-background-light px-4 py-2.5 text-sm font-medium focus:border-primary focus:ring-primary"
-              placeholder="e.g. Acme Corp"
+          <input
+            required
+            type="text"
+            value={formData.client}
+            onChange={e => handleChange('client', e.target.value)}
+            className="w-full rounded-xl border-border-color bg-background-light px-4 py-2.5 text-sm font-medium focus:border-primary focus:ring-primary"
+            placeholder="e.g. Acme Corp"
           />
         </div>
 
         <div>
-            <label className="block text-xs font-bold text-text-muted uppercase mb-1">Due Date</label>
-            <div className="relative">
-                <input 
-                    type="date" 
-                    required
-                    value={formData.dueDate}
-                    onChange={e => handleChange('dueDate', e.target.value)}
-                    className="w-full rounded-xl border-border-color bg-background-light px-4 py-2.5 text-sm font-medium focus:border-primary focus:ring-primary"
-                />
-            </div>
+          <label className="block text-xs font-bold text-text-muted uppercase mb-1">Due Date</label>
+          <div className="relative">
+            <input
+              type="date"
+              required
+              value={formData.dueDate}
+              onChange={e => handleChange('dueDate', e.target.value)}
+              className="w-full rounded-xl border-border-color bg-background-light px-4 py-2.5 text-sm font-medium focus:border-primary focus:ring-primary"
+            />
+          </div>
         </div>
 
         <div>
           <label className="block text-xs font-bold text-text-muted uppercase mb-1">Description</label>
-          <textarea 
+          <textarea
             rows={3}
             value={formData.description}
             onChange={e => handleChange('description', e.target.value)}
@@ -352,30 +352,30 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, onS
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-            <div>
-                <label className="block text-xs font-bold text-text-muted uppercase mb-1">Status</label>
-                <select 
-                    value={formData.status}
-                    onChange={e => handleChange('status', e.target.value)}
-                    className="w-full rounded-xl border-border-color bg-background-light px-4 py-2.5 text-sm font-medium focus:border-primary focus:ring-primary"
-                >
-                    <option value="Planning">Planning</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Review">Review</option>
-                    <option value="Completed">Completed</option>
-                </select>
-            </div>
-            <div>
-                <label className="block text-xs font-bold text-text-muted uppercase mb-1">Progress: {formData.progress}%</label>
-                <input 
-                    type="range" 
-                    min="0" 
-                    max="100" 
-                    value={formData.progress}
-                    onChange={e => handleChange('progress', parseInt(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary mt-3"
-                />
-            </div>
+          <div>
+            <label className="block text-xs font-bold text-text-muted uppercase mb-1">Status</label>
+            <select
+              value={formData.status}
+              onChange={e => handleChange('status', e.target.value)}
+              className="w-full rounded-xl border-border-color bg-background-light px-4 py-2.5 text-sm font-medium focus:border-primary focus:ring-primary"
+            >
+              <option value="Planning">Planning</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Review">Review</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-text-muted uppercase mb-1">Progress: {formData.progress}%</label>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={formData.progress}
+              onChange={e => handleChange('progress', parseInt(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary mt-3"
+            />
+          </div>
         </div>
 
         <div className="pt-2 flex justify-end gap-3 border-t border-gray-100 mt-2">
@@ -402,6 +402,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
   const [description, setDescription] = useState('');
   const [project, setProject] = useState('');
   const [priority, setPriority] = useState('Medium' as const);
+  const [status, setStatus] = useState('Todo' as const);
   const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
@@ -410,12 +411,14 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
       setDescription(initialData.description || '');
       setProject(initialData.project);
       setPriority(initialData.priority as any);
+      setStatus(initialData.status as any);
       setDueDate(initialData.dueDate);
     } else {
       setTitle('');
       setDescription('');
       setProject('');
       setPriority('Medium');
+      setStatus('Todo');
       setDueDate(new Date().toISOString().split('T')[0]);
     }
   }, [initialData, isOpen]);
@@ -427,8 +430,8 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
       description,
       project: project || 'General',
       priority,
-      status: initialData ? initialData.status : 'Todo',
-      dueDate: dueDate
+      status,
+      dueDate
     });
     if (!initialData) {
       setTitle('');
@@ -443,9 +446,9 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
           <label className="block text-xs font-bold text-text-muted uppercase mb-1">Task Title</label>
-          <input 
+          <input
             required
-            type="text" 
+            type="text"
             value={title}
             onChange={e => setTitle(e.target.value)}
             className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
@@ -454,7 +457,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
         </div>
         <div>
           <label className="block text-xs font-bold text-text-muted uppercase mb-1">Description</label>
-          <textarea 
+          <textarea
             rows={10}
             value={description}
             onChange={e => setDescription(e.target.value)}
@@ -465,7 +468,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-text-muted uppercase mb-1">Project</label>
-            <select 
+            <select
               value={project}
               onChange={e => setProject(e.target.value)}
               className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
@@ -476,7 +479,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
           </div>
           <div>
             <label className="block text-xs font-bold text-text-muted uppercase mb-1">Priority</label>
-            <select 
+            <select
               value={priority}
               onChange={e => setPriority(e.target.value as any)}
               className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
@@ -487,15 +490,29 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
             </select>
           </div>
         </div>
-        <div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-text-muted uppercase mb-1">Status</label>
+            <select
+              value={status}
+              onChange={e => setStatus(e.target.value as any)}
+              className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
+            >
+              <option value="Todo">Todo</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Done">Done</option>
+            </select>
+          </div>
+          <div>
             <label className="block text-xs font-bold text-text-muted uppercase mb-1">Due Date</label>
-            <input 
-                type="date" 
-                required
-                value={dueDate}
-                onChange={e => setDueDate(e.target.value)}
-                className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
+            <input
+              type="date"
+              required
+              value={dueDate}
+              onChange={e => setDueDate(e.target.value)}
+              className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
             />
+          </div>
         </div>
         <div className="pt-2 flex justify-end gap-3">
           <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-bold text-text-muted hover:text-text-main">Cancel</button>
@@ -542,9 +559,9 @@ export const NewEventModal: React.FC<NewEventModalProps> = ({ isOpen, onClose, o
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
           <label className="block text-xs font-bold text-text-muted uppercase mb-1">Event Title</label>
-          <input 
+          <input
             required
-            type="text" 
+            type="text"
             value={title}
             onChange={e => setTitle(e.target.value)}
             className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
@@ -552,37 +569,37 @@ export const NewEventModal: React.FC<NewEventModalProps> = ({ isOpen, onClose, o
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
-            <div>
-                <label className="block text-xs font-bold text-text-muted uppercase mb-1">Date</label>
-                <input 
-                    type="date" 
-                    required
-                    value={date}
-                    onChange={e => setDate(e.target.value)}
-                    className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
-                />
-            </div>
-            <div>
-                <label className="block text-xs font-bold text-text-muted uppercase mb-1">Time</label>
-                <input 
-                    type="time" 
-                    value={time}
-                    onChange={e => setTime(e.target.value)}
-                    className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
-                />
-            </div>
+          <div>
+            <label className="block text-xs font-bold text-text-muted uppercase mb-1">Date</label>
+            <input
+              type="date"
+              required
+              value={date}
+              onChange={e => setDate(e.target.value)}
+              className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-text-muted uppercase mb-1">Time</label>
+            <input
+              type="time"
+              value={time}
+              onChange={e => setTime(e.target.value)}
+              className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
+            />
+          </div>
         </div>
         <div>
-            <label className="block text-xs font-bold text-text-muted uppercase mb-1">Type</label>
-            <select 
-                value={type}
-                onChange={e => setType(e.target.value as any)}
-                className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
-            >
-                <option value="Meeting">Meeting</option>
-                <option value="Deadline">Deadline</option>
-                <option value="Review">Review</option>
-            </select>
+          <label className="block text-xs font-bold text-text-muted uppercase mb-1">Type</label>
+          <select
+            value={type}
+            onChange={e => setType(e.target.value as any)}
+            className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
+          >
+            <option value="Meeting">Meeting</option>
+            <option value="Deadline">Deadline</option>
+            <option value="Review">Review</option>
+          </select>
         </div>
         <div className="pt-2 flex justify-end gap-3">
           <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-bold text-text-muted hover:text-text-main">Cancel</button>
@@ -608,7 +625,7 @@ export const NewMemberModal: React.FC<NewMemberModalProps> = ({ isOpen, onClose,
     e.preventDefault();
     // Select random avatar for simplicity
     const randomAvatar = Object.values(AVATARS)[Math.floor(Math.random() * Object.values(AVATARS).length)];
-    
+
     onSubmit({
       name,
       email,
@@ -627,9 +644,9 @@ export const NewMemberModal: React.FC<NewMemberModalProps> = ({ isOpen, onClose,
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
           <label className="block text-xs font-bold text-text-muted uppercase mb-1">Full Name</label>
-          <input 
+          <input
             required
-            type="text" 
+            type="text"
             value={name}
             onChange={e => setName(e.target.value)}
             className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
@@ -638,9 +655,9 @@ export const NewMemberModal: React.FC<NewMemberModalProps> = ({ isOpen, onClose,
         </div>
         <div>
           <label className="block text-xs font-bold text-text-muted uppercase mb-1">Email Address</label>
-          <input 
+          <input
             required
-            type="email" 
+            type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
@@ -649,9 +666,9 @@ export const NewMemberModal: React.FC<NewMemberModalProps> = ({ isOpen, onClose,
         </div>
         <div>
           <label className="block text-xs font-bold text-text-muted uppercase mb-1">Role</label>
-          <input 
+          <input
             required
-            type="text" 
+            type="text"
             value={role}
             onChange={e => setRole(e.target.value)}
             className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
