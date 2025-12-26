@@ -459,15 +459,27 @@ class StorageService {
         throw new Error(`File size exceeds 10MB limit. File size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
       }
 
+      // Sanitizar nombre de archivo (remover espacios y tildes)
+      const sanitizeFileName = (name: string) => {
+        const noDiacritics = name
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
+        return noDiacritics
+          .replace(/\s+/g, '-')
+          .replace(/[^a-zA-Z0-9._-]/g, '-')
+          .replace(/-+/g, '-')
+          .toLowerCase();
+      };
+
       // Generar nombre único del archivo
       const fileId = uuidv4();
-      const fileName = `${fileId}-${file.name}`;
+      const fileName = `${fileId}-${sanitizeFileName(file.name)}`;
       const filePath = `projects/${projectId}/${fileName}`;
 
       // Subir archivo a Storage
       const { data, error: uploadError } = await supabase.storage
         .from('project-attachments')
-        .upload(filePath, file);
+        .upload(filePath, file, { contentType: file.type });
 
       if (uploadError) throw uploadError;
 
@@ -478,6 +490,9 @@ class StorageService {
 
       const fileUrl = publicUrlData.publicUrl;
 
+      // Obtener usuario autenticado para RLS
+      const { data: { user } } = await supabase.auth.getUser();
+      
       // Crear registro en la BD
       const { data: attachment, error: insertError } = await supabase
         .from('project_attachments')
@@ -487,6 +502,7 @@ class StorageService {
           file_url: fileUrl,
           file_type: file.type,
           file_size: file.size,
+          created_by: user?.id,
         })
         .select()
         .single();
@@ -513,7 +529,11 @@ class StorageService {
 
       // Extraer el filepath de la URL del archivo
       const fileUrl = new URL(attachment.file_url);
-      const filePath = fileUrl.pathname.split('/storage/v1/object/public/project-attachments/')[1];
+      let filePath = '';
+      const parts = fileUrl.pathname.split('/project-attachments/');
+      if (parts.length >= 2) {
+        filePath = parts[1];
+      }
 
       // Eliminar archivo de Storage
       if (filePath) {
@@ -571,7 +591,11 @@ class StorageService {
         for (const attachment of attachments) {
           try {
             const fileUrl = new URL(attachment.file_url);
-            const filePath = fileUrl.pathname.split('/storage/v1/object/public/project-attachments/')[1];
+            let filePath = '';
+            const parts = fileUrl.pathname.split('/project-attachments/');
+            if (parts.length >= 2) {
+              filePath = parts[1];
+            }
             if (filePath) {
               filePaths.push(filePath);
             }
