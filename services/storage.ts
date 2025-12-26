@@ -1,6 +1,7 @@
 
-import { Project, Task, TeamMember, CalendarEvent, MeetingNote } from '../types';
+import { Project, Task, TeamMember, CalendarEvent, MeetingNote, ProjectAttachment } from '../types';
 import { supabase, handleSupabaseError } from './supabase';
+import { v4 as uuidv4 } from 'uuid';
 
 class StorageService {
   // Helper para convertir datos de Supabase al formato de la app
@@ -61,6 +62,18 @@ class StorageService {
       date: dbEvent.date,
       type: dbEvent.type,
       time: dbEvent.time,
+    };
+  }
+
+  private mapProjectAttachment(dbAttachment: any): ProjectAttachment {
+    return {
+      id: dbAttachment.id,
+      project_id: dbAttachment.project_id,
+      file_name: dbAttachment.file_name,
+      file_url: dbAttachment.file_url,
+      file_type: dbAttachment.file_type,
+      file_size: dbAttachment.file_size,
+      created_at: dbAttachment.created_at,
     };
   }
 
@@ -141,6 +154,9 @@ class StorageService {
         .single();
 
       if (fetchError) throw fetchError;
+
+      // Borrar todos los adjuntos del proyecto (y sus archivos en Storage)
+      await this.deleteProjectAttachmentsCascade(id);
 
       // Borrar todas las tareas asociadas al proyecto
       if (project) {
@@ -430,6 +446,158 @@ class StorageService {
       if (error) throw error;
     } catch (e) {
       console.error("Error deleting note:", e);
+      throw e;
+    }
+  }
+
+  // --- Project Attachments ---
+  async uploadProjectAttachment(projectId: string, file: File): Promise<ProjectAttachment> {
+    try {
+      // Validar tamaño de archivo (10MB máximo)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        throw new Error(`File size exceeds 10MB limit. File size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+      }
+
+      // Generar nombre único del archivo
+      const fileId = uuidv4();
+      const fileName = `${fileId}-${file.name}`;
+      const filePath = `projects/${projectId}/${fileName}`;
+
+      // Subir archivo a Storage
+      const { data, error: uploadError } = await supabase.storage
+        .from('project-attachments')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Generar URL pública del archivo
+      const { data: publicUrlData } = supabase.storage
+        .from('project-attachments')
+        .getPublicUrl(filePath);
+
+      const fileUrl = publicUrlData.publicUrl;
+
+      // Crear registro en la BD
+      const { data: attachment, error: insertError } = await supabase
+        .from('project_attachments')
+        .insert({
+          project_id: projectId,
+          file_name: file.name,
+          file_url: fileUrl,
+          file_type: file.type,
+          file_size: file.size,
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      return this.mapProjectAttachment(attachment);
+    } catch (e) {
+      console.error('Error uploading attachment:', e);
+      throw e;
+    }
+  }
+
+  async deleteProjectAttachment(attachmentId: string): Promise<void> {
+    try {
+      // Obtener detalles del attachment
+      const { data: attachment, error: fetchError } = await supabase
+        .from('project_attachments')
+        .select('*')
+        .eq('id', attachmentId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Extraer el filepath de la URL del archivo
+      const fileUrl = new URL(attachment.file_url);
+      const filePath = fileUrl.pathname.split('/storage/v1/object/public/project-attachments/')[1];
+
+      // Eliminar archivo de Storage
+      if (filePath) {
+        const { error: deleteStorageError } = await supabase.storage
+          .from('project-attachments')
+          .remove([filePath]);
+
+        if (deleteStorageError) console.warn('Error deleting file from storage:', deleteStorageError);
+      }
+
+      // Eliminar registro de la BD
+      const { error: deleteDbError } = await supabase
+        .from('project_attachments')
+        .delete()
+        .eq('id', attachmentId);
+
+      if (deleteDbError) throw deleteDbError;
+    } catch (e) {
+      console.error('Error deleting attachment:', e);
+      throw e;
+    }
+  }
+
+  async getProjectAttachments(projectId: string): Promise<ProjectAttachment[]> {
+    try {
+      const { data, error } = await supabase
+        .from('project_attachments')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return (data || []).map(this.mapProjectAttachment.bind(this));
+    } catch (e) {
+      console.warn('Error fetching attachments:', e);
+      return [];
+    }
+  }
+
+  async deleteProjectAttachmentsCascade(projectId: string): Promise<void> {
+    try {
+      // Obtener todos los attachments del proyecto
+      const { data: attachments, error: fetchError } = await supabase
+        .from('project_attachments')
+        .select('*')
+        .eq('project_id', projectId);
+
+      if (fetchError) throw fetchError;
+
+      // Eliminar archivos de Storage
+      if (attachments && attachments.length > 0) {
+        const filePaths: string[] = [];
+        
+        for (const attachment of attachments) {
+          try {
+            const fileUrl = new URL(attachment.file_url);
+            const filePath = fileUrl.pathname.split('/storage/v1/object/public/project-attachments/')[1];
+            if (filePath) {
+              filePaths.push(filePath);
+            }
+          } catch (urlError) {
+            console.warn('Error parsing file URL:', attachment.file_url);
+          }
+        }
+
+        if (filePaths.length > 0) {
+          const { error: deleteStorageError } = await supabase.storage
+            .from('project-attachments')
+            .remove(filePaths);
+
+          if (deleteStorageError) console.warn('Error deleting files from storage:', deleteStorageError);
+        }
+      }
+
+      // Eliminar todos los registros de la BD (la cascade del FK lo haría, pero lo hacemos explícito)
+      const { error: deleteDbError } = await supabase
+        .from('project_attachments')
+        .delete()
+        .eq('project_id', projectId);
+
+      if (deleteDbError) throw deleteDbError;
+    } catch (e) {
+      console.error('Error deleting project attachments cascade:', e);
       throw e;
     }
   }

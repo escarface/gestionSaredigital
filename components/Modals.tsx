@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Calendar as CalendarIcon, AlertTriangle, Clock, Briefcase, User as UserIcon, Tag, Edit3, CheckCircle2 } from 'lucide-react';
+import { X, Calendar as CalendarIcon, AlertTriangle, Clock, Briefcase, User as UserIcon, Tag, Edit3, CheckCircle2, Upload, Download, Trash2, Eye, FileText, Image as ImageIcon, File } from 'lucide-react';
 import { AVATARS } from '../constants';
-import { Project, Task } from '../types';
+import { Project, Task, ProjectAttachment } from '../types';
 import { useAuth } from '../context/AuthContext';
 
 interface BaseModalProps {
@@ -240,10 +240,23 @@ interface ProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: any) => void;
+  onAttachmentUpload?: (file: File) => Promise<void>;
+  onAttachmentDelete?: (attachmentId: string) => Promise<void>;
+  onConfirmDelete?: () => void;
   initialData?: Project;
+  isLoading?: boolean;
 }
 
-export const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
+export const ProjectModal: React.FC<ProjectModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSubmit, 
+  onAttachmentUpload,
+  onAttachmentDelete,
+  initialData,
+  isLoading 
+}) => {
+  const [activeTab, setActiveTab] = useState<'basic' | 'description' | 'attachments'>('basic');
   const [formData, setFormData] = useState({
     name: '',
     client: '',
@@ -252,6 +265,10 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, onS
     status: 'Planning' as const,
     dueDate: '',
   });
+  const [attachments, setAttachments] = useState<ProjectAttachment[]>([]);
+  const [uploadingFile, setUploadingFile] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [showAttachmentConfirm, setShowAttachmentConfirm] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -263,6 +280,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, onS
         status: initialData.status as any,
         dueDate: initialData.dueDate,
       });
+      setAttachments(initialData.attachments || []);
     } else {
       setFormData({
         name: '',
@@ -272,6 +290,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, onS
         status: 'Planning',
         dueDate: new Date().toISOString().split('T')[0],
       });
+      setAttachments([]);
     }
   }, [initialData, isOpen]);
 
@@ -285,6 +304,10 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, onS
     }
   };
 
+  const handleChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
@@ -293,99 +316,362 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, onS
       statusColor: getStatusColor(formData.status),
       members: initialData ? initialData.members : [AVATARS.ana],
       icon: initialData ? initialData.icon : 'campaign',
+      attachments,
     });
   };
 
-  const handleChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
+  const getFileIcon = (fileType: string) => {
+    if (fileType.includes('image')) return <ImageIcon size={16} className="text-blue-500" />;
+    if (fileType.includes('pdf')) return <FileText size={16} className="text-red-500" />;
+    return <File size={16} className="text-gray-500" />;
+  };
+
+  const isImageFile = (fileType: string) => fileType.startsWith('image/');
+  const isPdfFile = (fileType: string) => fileType === 'application/pdf';
+
+  const handleFileInput = async (files: FileList | null) => {
+    if (!files || !onAttachmentUpload) return;
+
+    for (const file of Array.from(files)) {
+      try {
+        setUploadingFile(file.name);
+        await onAttachmentUpload(file);
+        // Adjunto se agregará desde el contexto
+      } catch (error) {
+        console.error('Error uploading file:', error);
+      } finally {
+        setUploadingFile(null);
+      }
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    handleFileInput(e.dataTransfer.files);
+  };
+
+  const handleAttachmentDelete = async (attachmentId: string) => {
+    try {
+      if (onAttachmentDelete) {
+        await onAttachmentDelete(attachmentId);
+        setAttachments(prev => prev.filter(a => a.id !== attachmentId));
+      }
+    } catch (error) {
+      console.error('Error deleting attachment:', error);
+    }
+    setShowAttachmentConfirm(null);
+  };
+
+  if (!isOpen) return null;
+
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} title={initialData ? "Edit Project" : "Create New Project"}>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div>
-          <label className="block text-xs font-bold text-text-muted uppercase mb-1">Project Name</label>
-          <input
-            required
-            type="text"
-            value={formData.name}
-            onChange={e => handleChange('name', e.target.value)}
-            className="w-full rounded-xl border-border-color bg-background-light px-4 py-2.5 text-sm font-medium focus:border-primary focus:ring-primary"
-            placeholder="e.g. Website Redesign"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-text-muted uppercase mb-1">Client</label>
-          <input
-            required
-            type="text"
-            value={formData.client}
-            onChange={e => handleChange('client', e.target.value)}
-            className="w-full rounded-xl border-border-color bg-background-light px-4 py-2.5 text-sm font-medium focus:border-primary focus:ring-primary"
-            placeholder="e.g. Acme Corp"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-text-muted uppercase mb-1">Due Date</label>
-          <div className="relative">
-            <input
-              type="date"
-              required
-              value={formData.dueDate}
-              onChange={e => handleChange('dueDate', e.target.value)}
-              className="w-full rounded-xl border-border-color bg-background-light px-4 py-2.5 text-sm font-medium focus:border-primary focus:ring-primary"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-text-muted uppercase mb-1">Description</label>
-          <textarea
-            rows={3}
-            value={formData.description}
-            onChange={e => handleChange('description', e.target.value)}
-            className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary resize-none"
-            placeholder="Brief project description..."
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold text-text-muted uppercase mb-1">Status</label>
-            <select
-              value={formData.status}
-              onChange={e => handleChange('status', e.target.value)}
-              className="w-full rounded-xl border-border-color bg-background-light px-4 py-2.5 text-sm font-medium focus:border-primary focus:ring-primary"
-            >
-              <option value="Planning">Planning</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Review">Review</option>
-              <option value="Completed">Completed</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-text-muted uppercase mb-1">Progress: {formData.progress}%</label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={formData.progress}
-              onChange={e => handleChange('progress', parseInt(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary mt-3"
-            />
-          </div>
-        </div>
-
-        <div className="pt-2 flex justify-end gap-3 border-t border-gray-100 mt-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-bold text-text-muted hover:text-text-main">Cancel</button>
-          <button type="submit" className="px-6 py-2 bg-primary rounded-full text-sm font-bold text-black hover:bg-[#e6e205] transition-colors shadow-sm">
-            {initialData ? 'Save Changes' : 'Create Project'}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose}></div>
+      <div className="relative bg-white rounded-2xl w-full max-w-2xl shadow-2xl border border-border-color overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border-color bg-gray-50 flex-shrink-0">
+          <h3 className="font-bold text-lg text-text-main">{initialData ? "Edit Project" : "Create New Project"}</h3>
+          <button onClick={onClose} className="p-2 hover:bg-black/5 rounded-full transition-colors">
+            <X size={20} className="text-text-muted" />
           </button>
         </div>
-      </form>
-    </BaseModal>
+
+        {/* Tabs */}
+        <div className="flex gap-0 px-6 pt-4 border-b border-border-color bg-white flex-shrink-0">
+          {(['basic', 'description', 'attachments'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-3 font-bold text-sm uppercase tracking-wider border-b-2 transition-colors ${
+                activeTab === tab
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-text-muted hover:text-text-main'
+              }`}
+            >
+              {tab === 'basic' && 'Basic Info'}
+              {tab === 'description' && 'Description'}
+              {tab === 'attachments' && `Attachments (${attachments.length})`}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* BASIC INFO TAB */}
+            {activeTab === 'basic' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-text-muted uppercase mb-2">Project Name</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.name}
+                    onChange={e => handleChange('name', e.target.value)}
+                    className="w-full rounded-xl border border-border-color bg-background-light px-4 py-2.5 text-sm font-medium focus:border-primary focus:ring-primary focus:ring-1"
+                    placeholder="e.g. Website Redesign"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-text-muted uppercase mb-2">Client</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.client}
+                    onChange={e => handleChange('client', e.target.value)}
+                    className="w-full rounded-xl border border-border-color bg-background-light px-4 py-2.5 text-sm font-medium focus:border-primary focus:ring-primary focus:ring-1"
+                    placeholder="e.g. Acme Corp"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-text-muted uppercase mb-2">Due Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.dueDate}
+                    onChange={e => handleChange('dueDate', e.target.value)}
+                    className="w-full rounded-xl border border-border-color bg-background-light px-4 py-2.5 text-sm font-medium focus:border-primary focus:ring-primary focus:ring-1"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-text-muted uppercase mb-2">Status</label>
+                    <select
+                      value={formData.status}
+                      onChange={e => handleChange('status', e.target.value)}
+                      className="w-full rounded-xl border border-border-color bg-background-light px-4 py-2.5 text-sm font-medium focus:border-primary focus:ring-primary focus:ring-1"
+                    >
+                      <option value="Planning">Planning</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Review">Review</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-text-muted uppercase mb-2">Progress: {formData.progress}%</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={formData.progress}
+                      onChange={e => handleChange('progress', parseInt(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary mt-2"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* DESCRIPTION TAB */}
+            {activeTab === 'description' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-text-muted uppercase mb-2">Project Description</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={e => handleChange('description', e.target.value)}
+                    className="w-full rounded-xl border border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary focus:ring-1 resize-none"
+                    rows={10}
+                    placeholder="Detailed project description, goals, scope, and any important notes..."
+                  />
+                  <p className="text-xs text-text-muted mt-2">{formData.description.length} characters</p>
+                </div>
+              </div>
+            )}
+
+            {/* ATTACHMENTS TAB */}
+            {activeTab === 'attachments' && (
+              <div className="space-y-4">
+                {/* Drag & Drop Zone */}
+                {initialData && (
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={handleDrop}
+                    className={`border-2 border-dashed rounded-xl p-6 transition-colors ${
+                      dragOver ? 'border-primary bg-primary/5' : 'border-border-color bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <Upload size={24} className="text-primary" />
+                      <div className="text-center">
+                        <p className="text-sm font-bold text-text-main">Drag and drop files here or</p>
+                        <label className="text-sm font-bold text-primary cursor-pointer hover:underline">
+                          click to browse
+                          <input
+                            type="file"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => handleFileInput(e.target.files)}
+                            disabled={uploadingFile !== null}
+                          />
+                        </label>
+                      </div>
+                      <p className="text-xs text-text-muted">Maximum file size: 10MB</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Attachments List */}
+                {attachments.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-text-muted uppercase">Files ({attachments.length})</p>
+                    {attachments.map((attachment) => (
+                      <div key={attachment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-border-color hover:bg-gray-100 transition-colors group">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          {getFileIcon(attachment.file_type)}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-text-main truncate">{attachment.file_name}</p>
+                            <p className="text-xs text-text-muted">{formatFileSize(attachment.file_size)}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                          {isImageFile(attachment.file_type) && (
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab('attachments')} // Just to show preview logic
+                              className="p-1.5 hover:bg-blue-100 text-blue-600 rounded transition-colors"
+                              title="Preview"
+                            >
+                              <Eye size={16} />
+                            </button>
+                          )}
+                          <a
+                            href={attachment.file_url}
+                            download
+                            className="p-1.5 hover:bg-green-100 text-green-600 rounded transition-colors"
+                            title="Download"
+                          >
+                            <Download size={16} />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => setShowAttachmentConfirm(attachment.id)}
+                            className="p-1.5 hover:bg-red-100 text-red-600 rounded transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <File size={32} className="mx-auto text-gray-300 mb-2" />
+                    <p className="text-sm text-text-muted">No files attached yet</p>
+                  </div>
+                )}
+
+                {/* Image Preview */}
+                {attachments.some(a => isImageFile(a.file_type)) && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-text-muted uppercase">Image Preview</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {attachments
+                        .filter(a => isImageFile(a.file_type))
+                        .map((attachment) => (
+                          <img
+                            key={attachment.id}
+                            src={attachment.file_url}
+                            alt={attachment.file_name}
+                            className="w-full h-24 object-cover rounded-lg border border-border-color"
+                          />
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* PDF Preview */}
+                {attachments.some(a => isPdfFile(a.file_type)) && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-text-muted uppercase">PDF Files</p>
+                    {attachments
+                      .filter(a => isPdfFile(a.file_type))
+                      .map((attachment) => (
+                        <a
+                          key={attachment.id}
+                          href={attachment.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 p-3 bg-red-50 rounded-lg border border-red-100 hover:bg-red-100 transition-colors"
+                        >
+                          <FileText size={16} className="text-red-500 flex-shrink-0" />
+                          <span className="text-sm font-bold text-red-700 truncate">{attachment.file_name}</span>
+                          <span className="text-xs text-red-600 ml-auto flex-shrink-0">Open PDF</span>
+                        </a>
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </form>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-border-color bg-gray-50 flex justify-end gap-3 flex-shrink-0">
+          <button 
+            onClick={onClose} 
+            className="px-4 py-2 text-sm font-bold text-text-muted hover:text-text-main transition-colors"
+            disabled={isLoading}
+          >
+            Cancel
+          </button>
+          {activeTab !== 'attachments' && (
+            <button 
+              onClick={handleSubmit} 
+              className="px-6 py-2 bg-primary rounded-full text-sm font-bold text-black hover:bg-[#e6e205] transition-colors shadow-sm disabled:opacity-50"
+              disabled={isLoading}
+            >
+              {initialData ? 'Save Changes' : 'Create Project'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Confirmation Modal para borrar attachment */}
+      {showAttachmentConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-auto">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowAttachmentConfirm(null)}></div>
+          <div className="relative bg-white rounded-2xl w-full max-w-sm shadow-2xl border border-border-color p-6">
+            <div className="flex flex-col items-center text-center">
+              <div className="size-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                <AlertTriangle className="text-red-600" size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-text-main mb-2">Delete Attachment?</h3>
+              <p className="text-text-muted text-sm mb-6">This action cannot be undone</p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowAttachmentConfirm(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-border-color font-bold text-text-muted hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleAttachmentDelete(showAttachmentConfirm)}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 font-bold text-white hover:bg-red-700 transition-colors shadow-sm"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

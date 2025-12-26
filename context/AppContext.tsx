@@ -18,6 +18,8 @@ interface AppContextType {
   addProject: (project: Partial<Project>) => Promise<void>;
   editProject: (project: Project) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
+  uploadProjectAttachment: (projectId: string, file: File) => Promise<void>;
+  deleteProjectAttachment: (attachmentId: string) => Promise<void>;
   addTask: (task: Partial<Task>) => Promise<void>;
   editTask: (task: Task) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
@@ -99,6 +101,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => loadData())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, () => loadData())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_events' }, () => loadData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'project_attachments' }, () => loadData())
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
             console.log('Supabase Realtime connected');
@@ -238,10 +241,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e) { notify("Error removing member", "error"); }
   };
 
+  const uploadProjectAttachment = async (projectId: string, file: File) => {
+    try {
+      const attachment = await db.uploadProjectAttachment(projectId, file);
+      // Actualizar el proyecto con el nuevo attachment
+      const project = projects.find(p => p.id === projectId);
+      if (project) {
+        const attachments = project.attachments || [];
+        await editProject({ ...project, attachments: [...attachments, attachment] });
+      }
+      notify(`File "${file.name}" uploaded successfully`);
+    } catch (e) {
+      const error = e as any;
+      notify(error.message || "Error uploading file", "error");
+    }
+  };
+
+  const deleteProjectAttachment = async (attachmentId: string) => {
+    try {
+      await db.deleteProjectAttachment(attachmentId);
+      // Actualizar todos los proyectos para eliminar el attachment
+      const updatedProjects = projects.map(p => ({
+        ...p,
+        attachments: (p.attachments || []).filter(a => a.id !== attachmentId)
+      }));
+      setProjects(updatedProjects);
+      notify('Attachment deleted');
+    } catch (e) { notify("Error deleting attachment", "error"); }
+  };
+
   return (
     <AppContext.Provider value={{
       projects, tasks, team, events, isLoading,
-      addProject, editProject, deleteProject, addTask, editTask, deleteTask, updateTaskStatus, addEvent, addTeamMember, removeTeamMember, notify,
+      addProject, editProject, deleteProject, uploadProjectAttachment, deleteProjectAttachment, addTask, editTask, deleteTask, updateTaskStatus, addEvent, addTeamMember, removeTeamMember, notify,
       isProjectModalOpen, editingProject, openProjectModal, closeProjectModal,
       confirmConfig, askConfirmation, closeConfirmation
     }}>

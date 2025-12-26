@@ -27,6 +27,8 @@ const AppLayout: React.FC = () => {
     closeProjectModal,
     addProject,
     editProject,
+    uploadProjectAttachment,
+    deleteProjectAttachment,
     editingProject,
     confirmConfig,
     closeConfirmation,
@@ -254,6 +256,8 @@ const AppLayout: React.FC = () => {
           onClose={closeProjectModal}
           onSubmit={handleProjectSubmit}
           initialData={editingProject}
+          onAttachmentUpload={uploadProjectAttachment}
+          onAttachmentDelete={deleteProjectAttachment}
         />
 
         <ConfirmationModal

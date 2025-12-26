@@ -7,6 +7,16 @@ export interface User {
   role: 'Admin' | 'Editor' | 'Viewer';
 }
 
+export interface ProjectAttachment {
+  id: string;
+  project_id: string;
+  file_name: string;
+  file_url: string;
+  file_type: string;
+  file_size: number;
+  created_at: string;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -19,6 +29,7 @@ export interface Project {
   extraMembers?: number;
   icon: string;
   dueDate: string;
+  attachments?: ProjectAttachment[];
 }
 
 export interface Task {

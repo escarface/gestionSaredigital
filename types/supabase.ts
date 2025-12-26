@@ -193,6 +193,41 @@ export interface Database {
           updated_at?: string
         }
       }
+      project_attachments: {
+        Row: {
+          id: string
+          project_id: string
+          file_name: string
+          file_url: string
+          file_type: string
+          file_size: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          file_name: string
+          file_url: string
+          file_type: string
+          file_size: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          file_name?: string
+          file_url?: string
+          file_type?: string
+          file_size?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Smartphone, Monitor, Megaphone, Plus, MoreHorizontal, Edit, Trash2, Calendar, Clock, StickyNote } from 'lucide-react';
+import { Smartphone, Monitor, Megaphone, Plus, MoreHorizontal, Edit, Trash2, Calendar, Clock, StickyNote, FileIcon } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Project } from '../types';
@@ -128,6 +128,12 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(project.status)}`}>
                   {project.status}
                 </span>
+                {(project.attachments && project.attachments.length > 0) && (
+                  <span className="px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 flex items-center gap-1">
+                    <FileIcon size={12} />
+                    {project.attachments.length}
+                  </span>
+                )}
                 {canEdit && (
                   <>
                     <button
