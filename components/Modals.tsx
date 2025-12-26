@@ -266,6 +266,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
     dueDate: '',
   });
   const [attachments, setAttachments] = useState<ProjectAttachment[]>([]);
+  const [queuedFiles, setQueuedFiles] = useState<File[]>([]);
   const [uploadingFile, setUploadingFile] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [showAttachmentConfirm, setShowAttachmentConfirm] = useState<string | null>(null);
@@ -281,6 +282,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
         dueDate: initialData.dueDate,
       });
       setAttachments(initialData.attachments || []);
+      setQueuedFiles([]);
     } else {
       setFormData({
         name: '',
@@ -291,6 +293,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
         dueDate: new Date().toISOString().split('T')[0],
       });
       setAttachments([]);
+      setQueuedFiles([]);
     }
   }, [initialData, isOpen]);
 
@@ -317,6 +320,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
       members: initialData ? initialData.members : [AVATARS.ana],
       icon: initialData ? initialData.icon : 'campaign',
       attachments,
+      __queuedFiles: queuedFiles,
     });
   };
 
@@ -342,9 +346,20 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
 
     for (const file of Array.from(files)) {
       try {
-        setUploadingFile(file.name);
-        await onAttachmentUpload(file);
-        // Adjunto se agregará desde el contexto
+        // Validación cliente 10MB
+        const maxSize = 10 * 1024 * 1024;
+        if (file.size > maxSize) {
+          console.error('File exceeds 10MB:', file.name);
+          continue;
+        }
+
+        if (initialData && onAttachmentUpload) {
+          setUploadingFile(file.name);
+          await onAttachmentUpload(file);
+        } else {
+          // No hay projectId aún: en creación, encolar archivos
+          setQueuedFiles(prev => [...prev, file]);
+        }
       } catch (error) {
         console.error('Error uploading file:', error);
       } finally {
@@ -400,7 +415,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
             >
               {tab === 'basic' && 'Basic Info'}
               {tab === 'description' && 'Description'}
-              {tab === 'attachments' && `Attachments (${attachments.length})`}
+              {tab === 'attachments' && `Attachments (${attachments.length + queuedFiles.length})`}
             </button>
           ))}
         </div>
@@ -495,35 +510,36 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
             {/* ATTACHMENTS TAB */}
             {activeTab === 'attachments' && (
               <div className="space-y-4">
-                {/* Drag & Drop Zone */}
-                {initialData && (
-                  <div
-                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                    onDragLeave={() => setDragOver(false)}
-                    onDrop={handleDrop}
-                    className={`border-2 border-dashed rounded-xl p-6 transition-colors ${
-                      dragOver ? 'border-primary bg-primary/5' : 'border-border-color bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <Upload size={24} className="text-primary" />
-                      <div className="text-center">
-                        <p className="text-sm font-bold text-text-main">Drag and drop files here or</p>
-                        <label className="text-sm font-bold text-primary cursor-pointer hover:underline">
-                          click to browse
-                          <input
-                            type="file"
-                            multiple
-                            className="hidden"
-                            onChange={(e) => handleFileInput(e.target.files)}
-                            disabled={uploadingFile !== null}
-                          />
-                        </label>
-                      </div>
-                      <p className="text-xs text-text-muted">Maximum file size: 10MB</p>
+                {/* Drag & Drop Zone (siempre visible, en creación se encola) */}
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-xl p-6 transition-colors ${
+                    dragOver ? 'border-primary bg-primary/5' : 'border-border-color bg-gray-50'
+                  }`}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload size={24} className="text-primary" />
+                    <div className="text-center">
+                      <p className="text-sm font-bold text-text-main">Drag and drop files here or</p>
+                      <label className="text-sm font-bold text-primary cursor-pointer hover:underline">
+                        click to browse
+                        <input
+                          type="file"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => handleFileInput(e.target.files)}
+                          disabled={uploadingFile !== null}
+                        />
+                      </label>
                     </div>
+                    <p className="text-xs text-text-muted">Maximum file size: 10MB</p>
+                    {!initialData && (
+                      <p className="text-xs text-text-muted">Files will upload after creating the project.</p>
+                    )}
                   </div>
-                )}
+                </div>
 
                 {/* Attachments List */}
                 {attachments.length > 0 ? (
@@ -573,6 +589,32 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
                   <div className="text-center py-8">
                     <File size={32} className="mx-auto text-gray-300 mb-2" />
                     <p className="text-sm text-text-muted">No files attached yet</p>
+                  </div>
+                )}
+
+                {/* Queued Files (creation only) */}
+                {queuedFiles.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-text-muted uppercase">Queued Files ({queuedFiles.length})</p>
+                    {queuedFiles.map((file, idx) => (
+                      <div key={`${file.name}-${idx}`} className="flex items-center justify-between p-3 bg-white rounded-lg border border-dashed border-border-color">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          {getFileIcon(file.type)}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-text-main truncate">{file.name}</p>
+                            <p className="text-xs text-text-muted">{formatFileSize(file.size)}</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setQueuedFiles(prev => prev.filter((_, i) => i !== idx))}
+                          className="p-1.5 hover:bg-red-100 text-red-600 rounded transition-colors"
+                          title="Remove from queue"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
 

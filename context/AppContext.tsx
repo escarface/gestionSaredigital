@@ -152,9 +152,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addProject = async (projectData: Partial<Project>) => {
+    const queuedFiles = (projectData as any).__queuedFiles as File[] | undefined;
     const newProject = { ...projectData, id: uuidv4() } as Project;
     try {
       await db.saveProject(newProject);
+      // Subir archivos encolados (si hay)
+      if (queuedFiles && queuedFiles.length > 0) {
+        for (const file of queuedFiles) {
+          try {
+            await db.uploadProjectAttachment(newProject.id, file);
+          } catch (e) {
+            console.error('Error uploading queued file:', e);
+          }
+        }
+      }
       await loadData();
       notify(`Project "${newProject.name}" saved.`);
       closeProjectModal();
