@@ -483,12 +483,21 @@ class StorageService {
 
       if (uploadError) throw uploadError;
 
-      // Generar URL pública del archivo
-      const { data: publicUrlData } = supabase.storage
+      // Generar URL firmada (signed URL) válida por 1 año para usuarios autenticados
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('project-attachments')
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 31536000); // 1 año en segundos
 
-      const fileUrl = publicUrlData.publicUrl;
+      if (signedUrlError) {
+        console.warn('Error creating signed URL, falling back to public URL:', signedUrlError);
+        // Fallback: usar URL pública
+        const { data: publicUrlData } = supabase.storage
+          .from('project-attachments')
+          .getPublicUrl(filePath);
+        var fileUrl = publicUrlData.publicUrl;
+      } else {
+        var fileUrl = signedUrlData.signedUrl;
+      }
 
       // Obtener usuario autenticado para RLS
       const { data: { user } } = await supabase.auth.getUser();

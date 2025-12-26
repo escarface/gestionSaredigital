@@ -29,20 +29,31 @@ CREATE INDEX IF NOT EXISTS idx_project_attachments_created_at ON public.project_
 -- =====================================================
 ALTER TABLE public.project_attachments ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Enable read access for all authenticated users" ON public.project_attachments;
+DROP POLICY IF EXISTS "Enable insert for authenticated users" ON public.project_attachments;
+DROP POLICY IF EXISTS "Enable delete for authenticated users" ON public.project_attachments;
+
 -- Policy: Allow authenticated users to view attachments
 CREATE POLICY "Enable read access for all authenticated users"
   ON public.project_attachments
   FOR SELECT
   USING (auth.role() = 'authenticated');
 
--- Policy: Allow users to insert their own attachments
+-- Policy: Allow authenticated users to insert attachments (simplified)
 CREATE POLICY "Enable insert for authenticated users"
   ON public.project_attachments
   FOR INSERT
-  WITH CHECK (auth.role() = 'authenticated' AND created_by = auth.uid());
+  WITH CHECK (auth.role() = 'authenticated');
 
 -- Policy: Allow users to delete their own attachments
 CREATE POLICY "Enable delete for authenticated users"
   ON public.project_attachments
   FOR DELETE
+  USING (auth.role() = 'authenticated' AND created_by = auth.uid());
+
+-- Policy: Allow users to update their own attachments
+CREATE POLICY "Enable update for authenticated users"
+  ON public.project_attachments
+  FOR UPDATE
   USING (auth.role() = 'authenticated' AND created_by = auth.uid());
