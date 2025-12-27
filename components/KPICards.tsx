@@ -12,8 +12,8 @@ const KPICards: React.FC = () => {
   // Simple heuristic for "Pending Deadlines": Tasks not done that are 'High' priority
   const pendingDeadlines = tasks.filter(t => t.status !== 'Done' && t.priority === 'High').length;
   
-  // Placeholder for hours (requires time tracking feature)
-  const hoursSpent = 0;
+  // Calculate total actual hours from all tasks
+  const hoursSpent = tasks.reduce((sum, task) => sum + (task.actualHours || 0), 0);
 
   const kpis = [
     { 

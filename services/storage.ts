@@ -44,6 +44,8 @@ class StorageService {
       priority: dbTask.priority,
       status: dbTask.status,
       assignee: dbTask.assignee || '',
+      estimatedHours: dbTask.estimated_hours || 0,
+      actualHours: dbTask.actual_hours || 0,
     };
   }
 
@@ -262,6 +264,8 @@ class StorageService {
         priority: task.priority,
         status: task.status,
         assignee: task.assignee,
+        estimated_hours: task.estimatedHours || 0,
+        actual_hours: task.actualHours || 0,
       });
 
       if (error) throw error;
@@ -284,6 +288,8 @@ class StorageService {
           priority: task.priority,
           status: task.status,
           assignee: task.assignee,
+          estimated_hours: task.estimatedHours || 0,
+          actual_hours: task.actualHours || 0,
         })
         .eq('id', task.id);
 

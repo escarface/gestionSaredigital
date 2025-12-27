@@ -136,6 +136,33 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
             </div>
           </div>
 
+          {/* Time Tracking */}
+          {(task.estimatedHours || task.actualHours) ? (
+            <div className="space-y-4">
+              <h4 className="text-[11px] font-bold text-text-muted uppercase tracking-widest flex items-center gap-2">
+                <Clock size={14} /> Time Tracking <div className="h-px flex-1 bg-gray-100"></div>
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                  <div className="text-xs text-blue-600 font-medium mb-1">Estimated</div>
+                  <div className="text-2xl font-bold text-blue-700">{task.estimatedHours || 0}h</div>
+                </div>
+                <div className="p-4 bg-green-50 rounded-xl border border-green-100">
+                  <div className="text-xs text-green-600 font-medium mb-1">Actual</div>
+                  <div className="text-2xl font-bold text-green-700">{task.actualHours || 0}h</div>
+                </div>
+              </div>
+              {(task.estimatedHours && task.actualHours) ? (
+                <div className="text-xs text-text-muted text-center p-2 bg-gray-50 rounded-lg">
+                  {task.actualHours > task.estimatedHours 
+                    ? `⚠️ ${(task.actualHours - task.estimatedHours).toFixed(1)}h over estimate`
+                    : `✓ ${(task.estimatedHours - task.actualHours).toFixed(1)}h remaining`
+                  }
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
           {/* Descripción */}
           <div className="space-y-4">
             <h4 className="text-[11px] font-bold text-text-muted uppercase tracking-widest flex items-center gap-2">
@@ -739,6 +766,8 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
   const [priority, setPriority] = useState('Medium' as const);
   const [status, setStatus] = useState('Todo' as const);
   const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]);
+  const [estimatedHours, setEstimatedHours] = useState<number>(0);
+  const [actualHours, setActualHours] = useState<number>(0);
 
   useEffect(() => {
     if (initialData) {
@@ -748,6 +777,8 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
       setPriority(initialData.priority as any);
       setStatus(initialData.status as any);
       setDueDate(initialData.dueDate);
+      setEstimatedHours(initialData.estimatedHours || 0);
+      setActualHours(initialData.actualHours || 0);
     } else {
       setTitle('');
       setDescription('');
@@ -755,6 +786,8 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
       setPriority('Medium');
       setStatus('Todo');
       setDueDate(new Date().toISOString().split('T')[0]);
+      setEstimatedHours(0);
+      setActualHours(0);
     }
   }, [initialData, isOpen]);
 
@@ -766,12 +799,16 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
       project: project || 'General',
       priority,
       status,
-      dueDate
+      dueDate,
+      estimatedHours,
+      actualHours
     });
     if (!initialData) {
       setTitle('');
       setDescription('');
       setProject('');
+      setEstimatedHours(0);
+      setActualHours(0);
     }
     onClose();
   };
@@ -846,6 +883,32 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
               value={dueDate}
               onChange={e => setDueDate(e.target.value)}
               className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-text-muted uppercase mb-1">Estimated Hours</label>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={estimatedHours}
+              onChange={e => setEstimatedHours(parseFloat(e.target.value) || 0)}
+              className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
+              placeholder="0"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-text-muted uppercase mb-1">Actual Hours</label>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={actualHours}
+              onChange={e => setActualHours(parseFloat(e.target.value) || 0)}
+              className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
+              placeholder="0"
             />
           </div>
         </div>

@@ -44,6 +44,8 @@ export interface Task {
   priority: 'High' | 'Medium' | 'Low';
   status: 'Todo' | 'In Progress' | 'Done';
   assignee?: string;
+  estimatedHours?: number;
+  actualHours?: number;
 }
 
 export interface KPI {
