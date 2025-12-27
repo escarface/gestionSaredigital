@@ -42,6 +42,7 @@ lerna-debug.log*
 # =====================================================
 .vscode/*
 !.vscode/extensions.json
+.vscode/mcp.json
 .idea/
 .DS_Store
 *.suo

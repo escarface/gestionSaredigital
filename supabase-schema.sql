@@ -19,6 +19,14 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   email TEXT NOT NULL UNIQUE,
   avatar TEXT,
   role TEXT NOT NULL CHECK (role IN ('Admin', 'Editor', 'Viewer')) DEFAULT 'Viewer',
+  bio TEXT,
+  phone TEXT,
+  timezone TEXT DEFAULT 'UTC',
+  language TEXT DEFAULT 'Spanish',
+  theme TEXT DEFAULT 'light' CHECK (theme IN ('light', 'dark')),
+  notifications_enabled BOOLEAN DEFAULT true,
+  email_alerts BOOLEAN DEFAULT false,
+  view_mode TEXT DEFAULT 'standard' CHECK (view_mode IN ('standard', 'compact')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
