@@ -1,18 +1,21 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../types/supabase';
+import type { PostgrestError } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Validación estricta de credenciales
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('⚠️ Supabase credentials missing in .env.local');
-  console.error('Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
+  throw new Error(
+    'Missing Supabase credentials. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env.local file.'
+  );
 }
 
 // Crear cliente de Supabase
 export const supabase: SupabaseClient<Database> = createClient(
-  supabaseUrl || '',
-  supabaseAnonKey || '',
+  supabaseUrl,
+  supabaseAnonKey,
   {
     auth: {
       persistSession: true,
@@ -28,15 +31,31 @@ export const supabase: SupabaseClient<Database> = createClient(
   }
 );
 
-// Helper para manejar errores de Supabase
-export const handleSupabaseError = (error: any, context?: string) => {
-  console.error(`Supabase Error ${context ? `(${context})` : ''}:`, error);
-  
-  if (error?.message) {
-    return error.message;
+// Helper para manejar errores de Supabase de forma segura
+export const handleSupabaseError = (error: PostgrestError | Error | unknown, context?: string): string => {
+  // Log detallado en desarrollo, solo para debugging
+  if (import.meta.env.DEV) {
+    console.error(`Supabase Error ${context ? `(${context})` : ''}:`, error);
   }
-  
-  return 'An unexpected error occurred';
+
+  // Retornar mensaje genérico al usuario (no exponer detalles internos)
+  if (error && typeof error === 'object' && 'message' in error) {
+    // Filtrar mensajes de error que puedan exponer información sensible
+    const message = String(error.message);
+    if (message.includes('JWT') || message.includes('auth') || message.includes('token')) {
+      return 'Authentication error. Please try logging in again.';
+    }
+    if (message.includes('unique') || message.includes('duplicate')) {
+      return 'This record already exists.';
+    }
+    if (message.includes('foreign key') || message.includes('violates')) {
+      return 'Invalid reference. Please check your data.';
+    }
+    // Mensaje genérico para otros casos
+    return 'An error occurred. Please try again.';
+  }
+
+  return 'An unexpected error occurred. Please try again.';
 };
 
 // Verificar conexión

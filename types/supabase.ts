@@ -16,6 +16,14 @@ export interface Database {
           email: string
           avatar: string | null
           role: 'Admin' | 'Editor' | 'Viewer'
+          bio: string | null
+          phone: string | null
+          timezone: string
+          language: string
+          theme: string
+          notifications_enabled: boolean
+          email_alerts: boolean
+          view_mode: string
           created_at: string
           updated_at: string
         }
@@ -25,6 +33,14 @@ export interface Database {
           email: string
           avatar?: string | null
           role?: 'Admin' | 'Editor' | 'Viewer'
+          bio?: string | null
+          phone?: string | null
+          timezone?: string
+          language?: string
+          theme?: string
+          notifications_enabled?: boolean
+          email_alerts?: boolean
+          view_mode?: string
           created_at?: string
           updated_at?: string
         }
@@ -34,6 +50,14 @@ export interface Database {
           email?: string
           avatar?: string | null
           role?: 'Admin' | 'Editor' | 'Viewer'
+          bio?: string | null
+          phone?: string | null
+          timezone?: string
+          language?: string
+          theme?: string
+          notifications_enabled?: boolean
+          email_alerts?: boolean
+          view_mode?: string
           created_at?: string
           updated_at?: string
         }
@@ -226,6 +250,41 @@ export interface Database {
           created_by?: string | null
           created_at?: string
           updated_at?: string
+        }
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          message: string
+          type: 'info' | 'success' | 'warning' | 'error'
+          related_type: 'project' | 'task' | 'team' | 'system' | null
+          related_id: string | null
+          read: boolean
+          created_at: string
+        }
+        Insert: {
+          id: string
+          user_id: string
+          title: string
+          message: string
+          type?: 'info' | 'success' | 'warning' | 'error'
+          related_type?: 'project' | 'task' | 'team' | 'system' | null
+          related_id?: string | null
+          read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          message?: string
+          type?: 'info' | 'success' | 'warning' | 'error'
+          related_type?: 'project' | 'task' | 'team' | 'system' | null
+          related_id?: string | null
+          read?: boolean
+          created_at?: string
         }
       }
     }

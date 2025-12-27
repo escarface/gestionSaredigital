@@ -1,5 +1,30 @@
-# Logs
-logs
+# =====================================================
+# DEPENDENCIES
+# =====================================================
+node_modules/
+package-lock.json
+
+# =====================================================
+# BUILD OUTPUT
+# =====================================================
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# =====================================================
+# ENVIRONMENT VARIABLES & SECRETS
+# =====================================================
+*.local
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# =====================================================
+# LOGS
+# =====================================================
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,19 +32,52 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# =====================================================
+# CLAUDE CODE CONFIGURATION (Local only)
+# =====================================================
+.claude/
 
-# Editor directories and files
+# =====================================================
+# EDITOR DIRECTORIES AND FILES
+# =====================================================
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# =====================================================
+# TEMPORARY DOCUMENTATION (Work in progress)
+# =====================================================
+ROADMAP.md
+SETTINGS_NOTIFICATIONS.md
+
+# =====================================================
+# DATABASE SEED/TEST DATA (Not for production)
+# =====================================================
+supabase-seed-data.sql
 supabase-meeting-notes.sql
+supabase-disable-email-confirmation.sql
+
+# =====================================================
+# TEMPORARY/UNUSED FILES
+# =====================================================
+server.js
+services/firebase.ts
+
+# =====================================================
+# OS GENERATED FILES
+# =====================================================
+Thumbs.db
+Desktop.ini
+.DS_Store
+*~
+
+# =====================================================
+# SECURITY REPORTS (Keep locally, don't commit)
+# =====================================================
+SECURITY_FIXES.md

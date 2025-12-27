@@ -266,8 +266,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, on
 interface ProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
-  onAttachmentUpload?: (projectId: string, file: File) => Promise<any>;
+  onSubmit: (data: Project) => void;
+  onAttachmentUpload?: (projectId: string, file: File) => Promise<ProjectAttachment>;
   onAttachmentDelete?: (attachmentId: string) => Promise<void>;
   onConfirmDelete?: () => void;
   initialData?: Project;
@@ -305,7 +305,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
         client: initialData.client,
         description: initialData.description || '',
         progress: initialData.progress,
-        status: initialData.status as any,
+        status: initialData.status,
         dueDate: initialData.dueDate,
       });
       setAttachments(initialData.attachments || []);
@@ -334,7 +334,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
     }
   };
 
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: string, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -754,8 +754,8 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
 interface NewTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
-  projects: any[];
+  onSubmit: (data: Partial<Task>) => void;
+  projects: Project[];
   initialData?: Task;
 }
 
@@ -774,8 +774,8 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
       setTitle(initialData.title);
       setDescription(initialData.description || '');
       setProject(initialData.project);
-      setPriority(initialData.priority as any);
-      setStatus(initialData.status as any);
+      setPriority(initialData.priority);
+      setStatus(initialData.status);
       setDueDate(initialData.dueDate);
       setEstimatedHours(initialData.estimatedHours || 0);
       setActualHours(initialData.actualHours || 0);
@@ -853,7 +853,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
             <label className="block text-xs font-bold text-text-muted uppercase mb-1">Priority</label>
             <select
               value={priority}
-              onChange={e => setPriority(e.target.value as any)}
+              onChange={e => setPriority(e.target.value as 'Low' | 'Medium' | 'High')}
               className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
             >
               <option value="Low">Low</option>
@@ -867,7 +867,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
             <label className="block text-xs font-bold text-text-muted uppercase mb-1">Status</label>
             <select
               value={status}
-              onChange={e => setStatus(e.target.value as any)}
+              onChange={e => setStatus(e.target.value as 'Todo' | 'In Progress' | 'Done')}
               className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
             >
               <option value="Todo">Todo</option>
@@ -926,7 +926,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
 interface NewEventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: Partial<CalendarEvent>) => void;
   defaultDate?: string;
 }
 
@@ -991,7 +991,7 @@ export const NewEventModal: React.FC<NewEventModalProps> = ({ isOpen, onClose, o
           <label className="block text-xs font-bold text-text-muted uppercase mb-1">Type</label>
           <select
             value={type}
-            onChange={e => setType(e.target.value as any)}
+            onChange={e => setType(e.target.value as 'Meeting' | 'Deadline' | 'Review')}
             className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
           >
             <option value="Meeting">Meeting</option>
@@ -1011,7 +1011,7 @@ export const NewEventModal: React.FC<NewEventModalProps> = ({ isOpen, onClose, o
 interface NewMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: Partial<TeamMember>) => void;
 }
 
 export const NewMemberModal: React.FC<NewMemberModalProps> = ({ isOpen, onClose, onSubmit }) => {

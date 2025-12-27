@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { db } from '../services/storage';
 import { supabase } from '../services/supabase';
@@ -7,6 +7,11 @@ import { Project, Task, TeamMember, CalendarEvent } from '../types';
 import { DEFAULT_AVATAR } from '../constants';
 import { v4 as uuidv4 } from 'uuid';
 import Toast from '../components/Toast';
+
+// Interface for project form data with optional queued files
+interface ProjectFormData extends Partial<Project> {
+  __queuedFiles?: File[];
+}
 
 interface AppContextType {
   projects: Project[];
@@ -16,7 +21,7 @@ interface AppContextType {
   isLoading: boolean;
 
   // Actions
-  addProject: (project: Partial<Project>) => Promise<void>;
+  addProject: (project: ProjectFormData) => Promise<void>;
   editProject: (project: Project) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   uploadProjectAttachment: (projectId: string, file: File) => Promise<void>;
@@ -163,11 +168,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setConfirmConfig(prev => ({ ...prev, isOpen: false }));
   };
 
-  const addProject = async (projectData: Partial<Project>) => {
-    const queuedFiles = (projectData as any).__queuedFiles as File[] | undefined;
+  const addProject = async (projectData: ProjectFormData) => {
+    const { __queuedFiles, ...projectFields } = projectData;
     const avatar = user?.avatar || DEFAULT_AVATAR;
     const newProject: Project = {
-      ...projectData,
+      ...projectFields,
       id: uuidv4(),
       createdById: user?.id,
       createdByName: user?.name,
@@ -176,8 +181,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await db.saveProject(newProject);
       // Subir archivos encolados (si hay)
-      if (queuedFiles && queuedFiles.length > 0) {
-        for (const file of queuedFiles) {
+      if (__queuedFiles && __queuedFiles.length > 0) {
+        for (const file of __queuedFiles) {
           try {
             await db.uploadProjectAttachment(newProject.id, file);
           } catch (e) {
@@ -283,7 +288,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       notify(`File "${file.name}" uploaded successfully`);
       return attachment;
     } catch (e) {
-      const error = e as any;
+      const error = e instanceof Error ? e : new Error(String(e));
       console.error('AppContext.uploadProjectAttachment error:', error);
       notify(error.message || "Error uploading file", "error");
       throw e;
@@ -303,13 +308,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e) { notify("Error deleting attachment", "error"); }
   };
 
+  const value = useMemo(
+    () => ({
+      projects,
+      tasks,
+      team,
+      events,
+      isLoading,
+      addProject,
+      editProject,
+      deleteProject,
+      uploadProjectAttachment,
+      deleteProjectAttachment,
+      addTask,
+      editTask,
+      deleteTask,
+      updateTaskStatus,
+      addEvent,
+      addTeamMember,
+      removeTeamMember,
+      notify,
+      isProjectModalOpen,
+      editingProject,
+      openProjectModal,
+      closeProjectModal,
+      confirmConfig,
+      askConfirmation,
+      closeConfirmation,
+    }),
+    [
+      projects,
+      tasks,
+      team,
+      events,
+      isLoading,
+      isProjectModalOpen,
+      editingProject,
+      confirmConfig,
+    ]
+  );
+
   return (
-    <AppContext.Provider value={{
-      projects, tasks, team, events, isLoading,
-      addProject, editProject, deleteProject, uploadProjectAttachment, deleteProjectAttachment, addTask, editTask, deleteTask, updateTaskStatus, addEvent, addTeamMember, removeTeamMember, notify,
-      isProjectModalOpen, editingProject, openProjectModal, closeProjectModal,
-      confirmConfig, askConfirmation, closeConfirmation
-    }}>
+    <AppContext.Provider value={value}>
       {children}
       {toast && (
         <Toast

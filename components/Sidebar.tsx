@@ -1,17 +1,16 @@
 
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { MENU_ITEMS, LOGO_URL } from '../constants';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 
 interface SidebarProps {
-  currentView: string;
-  onNavigate: (view: string) => void;
-  onNewProject?: () => void;
+  onClose?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
+const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { openProjectModal } = useApp();
   const { user } = useAuth();
 
@@ -33,24 +32,38 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
         {/* Navigation */}
         <nav className="flex flex-col gap-2">
           {MENU_ITEMS.map((item) => {
-            const isActive = item.id === currentView;
+            const path = item.id === 'dashboard' ? '/' : `/${item.id}`;
             return (
-              <button
+              <NavLink
                 key={item.id}
-                onClick={() => onNavigate(item.id)}
-                className={`flex w-full items-center gap-3 px-4 py-3 rounded-full transition-colors group ${isActive
-                    ? 'bg-primary/20'
-                    : 'hover:bg-black/5'
-                  }`}
+                to={path}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `flex w-full items-center gap-3 px-4 py-3 rounded-full transition-colors group ${
+                    isActive ? 'bg-primary/20' : 'hover:bg-black/5'
+                  }`
+                }
               >
-                <item.icon
-                  size={20}
-                  className={`group-hover:text-text-main ${isActive ? 'text-text-main' : 'text-text-muted'}`}
-                />
-                <p className={`text-sm font-bold ${isActive ? 'text-text-main' : 'text-text-main font-medium text-opacity-80'}`}>
-                  {item.label}
-                </p>
-              </button>
+                {({ isActive }) => (
+                  <>
+                    <item.icon
+                      size={20}
+                      className={`group-hover:text-text-main ${
+                        isActive ? 'text-text-main' : 'text-text-muted'
+                      }`}
+                    />
+                    <p
+                      className={`text-sm font-bold ${
+                        isActive
+                          ? 'text-text-main'
+                          : 'text-text-main font-medium text-opacity-80'
+                      }`}
+                    >
+                      {item.label}
+                    </p>
+                  </>
+                )}
+              </NavLink>
             );
           })}
         </nav>

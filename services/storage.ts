@@ -28,9 +28,8 @@ class StorageService {
       extraMembers: dbProject.extra_members || 0,
       icon: dbProject.icon,
       dueDate: dbProject.due_date,
-      createdById: dbProject.created_by || dbProject.createdById,
-      createdByName: dbProject.createdByName,
-      createdByAvatar: dbProject.createdByAvatar,
+      createdById: dbProject.created_by,
+      // createdByName y createdByAvatar se agregan en getProjects desde el JOIN
     };
   }
 
@@ -85,51 +84,29 @@ class StorageService {
   // --- Projects ---
   async getProjects(): Promise<Project[]> {
     try {
+      // Optimized: Use JOINs to fetch all data in a single query
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
+        .select(`
+          *,
+          profiles!projects_created_by_fkey(id, name, avatar),
+          project_attachments(*)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const creatorIds = Array.from(new Set((data || []).map(p => p.created_by).filter(Boolean)));
-      let profilesMap: Record<string, { name: string; avatar: string | null }> = {};
+      return (data || []).map((dbProject: any) => {
+        const project = this.mapProject(dbProject);
+        const creatorProfile = dbProject.profiles;
 
-      if (creatorIds.length > 0) {
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, name, avatar')
-          .in('id', creatorIds);
-
-        if (!profilesError && profiles) {
-          profilesMap = profiles.reduce((acc: Record<string, { name: string; avatar: string | null }>, profile) => {
-            acc[profile.id] = { name: profile.name, avatar: profile.avatar };
-            return acc;
-          }, {});
-        }
-      }
-
-      // Cargar attachments para cada proyecto
-      const projectsWithAttachments = await Promise.all(
-        (data || []).map(async (dbProject) => {
-          const project = this.mapProject(dbProject);
-          const creatorProfile = project.createdById ? profilesMap[project.createdById] : undefined;
-          const projectWithCreator = {
-            ...project,
-            createdByName: creatorProfile?.name || project.createdByName,
-            createdByAvatar: creatorProfile?.avatar || project.createdByAvatar,
-          };
-          try {
-            const attachments = await this.getProjectAttachments(project.id);
-            return { ...projectWithCreator, attachments };
-          } catch (e) {
-            console.warn(`Error loading attachments for project ${project.id}:`, e);
-            return projectWithCreator;
-          }
-        })
-      );
-
-      return projectsWithAttachments;
+        return {
+          ...project,
+          createdByName: creatorProfile?.name || 'Unknown User',
+          createdByAvatar: creatorProfile?.avatar || 'https://ui-avatars.com/api/?background=random&name=Unknown',
+          attachments: (dbProject.project_attachments || []).map(this.mapProjectAttachment.bind(this)),
+        };
+      });
     } catch (e) {
       console.warn("Supabase no disponible, usando fallback local...", e);
       return JSON.parse(localStorage.getItem('gestion_pro_projects') || '[]');
@@ -502,6 +479,36 @@ class StorageService {
   // --- Project Attachments ---
   async uploadProjectAttachment(projectId: string, file: File): Promise<ProjectAttachment> {
     try {
+      // Validar tipo MIME permitido
+      const allowedMimeTypes = [
+        // Images
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'image/svg+xml',
+        // Documents
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        // Text
+        'text/plain',
+        'text/csv',
+        // Archives
+        'application/zip',
+        'application/x-zip-compressed',
+        'application/x-rar-compressed',
+      ];
+
+      if (!allowedMimeTypes.includes(file.type)) {
+        throw new Error(`File type not allowed: ${file.type}. Please upload images, PDFs, Office documents, or archives.`);
+      }
+
       // Validar tamaño de archivo (10MB máximo)
       const maxSize = 10 * 1024 * 1024; // 10MB
       if (file.size > maxSize) {
@@ -537,20 +544,21 @@ class StorageService {
         .from('project-attachments')
         .createSignedUrl(filePath, 31536000); // 1 año en segundos
 
+      let fileUrl: string;
       if (signedUrlError) {
         console.warn('Error creating signed URL, falling back to public URL:', signedUrlError);
         // Fallback: usar URL pública
         const { data: publicUrlData } = supabase.storage
           .from('project-attachments')
           .getPublicUrl(filePath);
-        var fileUrl = publicUrlData.publicUrl;
+        fileUrl = publicUrlData.publicUrl;
       } else {
-        var fileUrl = signedUrlData.signedUrl;
+        fileUrl = signedUrlData.signedUrl;
       }
 
       // Obtener usuario autenticado para RLS
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       // Crear registro en la BD
       const { data: attachment, error: insertError } = await supabase
         .from('project_attachments')

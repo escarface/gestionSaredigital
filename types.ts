@@ -5,6 +5,14 @@ export interface User {
   email: string;
   avatar?: string;
   role: 'Admin' | 'Editor' | 'Viewer';
+  bio?: string;
+  phone?: string;
+  timezone?: string;
+  language?: string;
+  theme?: string;
+  notificationsEnabled?: boolean;
+  emailAlerts?: boolean;
+  viewMode?: string;
 }
 
 export interface ProjectAttachment {
@@ -91,4 +99,16 @@ export interface ConfirmationConfig {
   title: string;
   message: string;
   onConfirm: () => void;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  relatedType?: 'project' | 'task' | 'team' | 'system';
+  relatedId?: string;
+  read: boolean;
+  createdAt: string;
 }

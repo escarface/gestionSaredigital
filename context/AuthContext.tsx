@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { User } from '../types';
 import { DEFAULT_AVATAR } from '../constants';
 import { supabase } from '../services/supabase';
@@ -11,6 +11,9 @@ interface AuthContextType {
 
   signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
   signUpWithEmail: (email: string, password: string, name: string, role?: 'Admin' | 'Editor' | 'Viewer') => Promise<{ error: string | null }>;
+  updateProfile: (updates: Partial<User>) => Promise<{ error: string | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
+  uploadAvatar: (file: File) => Promise<{ error: string | null; url?: string }>;
   setUser: (user: User | null) => void;
 }
 
@@ -49,11 +52,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (profile && !error) {
         const userData: User = {
-          id: profile.id,
-          name: profile.name,
-          email: profile.email,
-          avatar: profile.avatar || DEFAULT_AVATAR,
-          role: profile.role,
+          id: (profile as Record<string, unknown>).id as string,
+          name: (profile as Record<string, unknown>).name as string,
+          email: (profile as Record<string, unknown>).email as string,
+          avatar: ((profile as Record<string, unknown>).avatar as string | null) || DEFAULT_AVATAR,
+          role: (profile as Record<string, unknown>).role as 'Admin' | 'Editor' | 'Viewer',
+          bio: (profile as Record<string, unknown>).bio as string | undefined,
+          phone: (profile as Record<string, unknown>).phone as string | undefined,
+          timezone: ((profile as Record<string, unknown>).timezone as string | undefined) || 'UTC',
+          language: ((profile as Record<string, unknown>).language as string | undefined) || 'en',
+          theme: ((profile as Record<string, unknown>).theme as 'light' | 'dark' | undefined) || 'light',
+          notificationsEnabled: ((profile as Record<string, unknown>).notifications_enabled as boolean | undefined) ?? true,
+          emailAlerts: ((profile as Record<string, unknown>).email_alerts as boolean | undefined) ?? false,
+          viewMode: ((profile as Record<string, unknown>).view_mode as 'standard' | 'compact' | undefined) || 'standard',
         };
         setUser(userData);
       } else {
@@ -72,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signInWithEmail = async (email: string, password: string) => {
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -81,12 +92,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) return { error: error.message };
       return { error: null };
-    } catch (e: any) {
-      return { error: e.message || 'Error signing in' };
+    } catch (e) {
+      const error = e instanceof Error ? e : new Error(String(e));
+      return { error: error.message || 'Error signing in' };
     }
-  };
+  }, []);
 
-  const signUpWithEmail = async (
+  const signUpWithEmail = useCallback(async (
     email: string,
     password: string,
     name: string,
@@ -111,35 +123,113 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       return { error: null };
-    } catch (e: any) {
-      return { error: e.message || 'Error signing up' };
+    } catch (e) {
+      const error = e instanceof Error ? e : new Error(String(e));
+      return { error: error.message || 'Error signing up' };
     }
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
-  };
+  }, []);
 
+  const updateProfile = useCallback(async (updates: Partial<User>) => {
+    if (!user) return { error: 'No user logged in' };
 
+    try {
+      const dbUpdates: Record<string, unknown> = {};
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.email !== undefined) dbUpdates.email = updates.email;
+      if (updates.avatar !== undefined) dbUpdates.avatar = updates.avatar;
+      if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
+      if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
+      if (updates.timezone !== undefined) dbUpdates.timezone = updates.timezone;
+      if (updates.language !== undefined) dbUpdates.language = updates.language;
+      if (updates.theme !== undefined) dbUpdates.theme = updates.theme;
+      if (updates.notificationsEnabled !== undefined) dbUpdates.notifications_enabled = updates.notificationsEnabled;
+      if (updates.emailAlerts !== undefined) dbUpdates.email_alerts = updates.emailAlerts;
+      if (updates.viewMode !== undefined) dbUpdates.view_mode = updates.viewMode;
 
-  const handleSetUser = (newUser: User | null) => {
+      dbUpdates.updated_at = new Date().toISOString();
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(dbUpdates as Record<string, unknown> & { id?: never })
+        .eq('id', user.id);
+
+      if (error) return { error: error.message };
+
+      setUser({ ...user, ...updates });
+      return { error: null };
+    } catch (e) {
+      const error = e instanceof Error ? e : new Error(String(e));
+      return { error: error.message || 'Error updating profile' };
+    }
+  }, [user]);
+
+  const updatePassword = useCallback(async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) return { error: error.message };
+      return { error: null };
+    } catch (e) {
+      const error = e instanceof Error ? e : new Error(String(e));
+      return { error: error.message || 'Error updating password' };
+    }
+  }, []);
+
+  const uploadAvatar = useCallback(async (file: File) => {
+    if (!user) return { error: 'No user logged in' };
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) return { error: uploadError.message };
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      const { error: updateError } = await updateProfile({ avatar: publicUrl });
+
+      if (updateError) return { error: updateError };
+
+      return { error: null, url: publicUrl };
+    } catch (e) {
+      const error = e instanceof Error ? e : new Error(String(e));
+      return { error: error.message || 'Error uploading avatar' };
+    }
+  }, [user, updateProfile]);
+
+  const handleSetUser = useCallback((newUser: User | null) => {
     setUser(newUser);
-  };
+  }, []);
 
-  return (
-    <AuthContext.Provider value={{
+  const value = useMemo(
+    () => ({
       user,
       loading,
       signOut,
-
       signInWithEmail,
       signUpWithEmail,
-      setUser: handleSetUser
-    }}>
-      {children}
-    </AuthContext.Provider>
+      updateProfile,
+      updatePassword,
+      uploadAvatar,
+      setUser: handleSetUser,
+    }),
+    [user, loading, signOut, signInWithEmail, signUpWithEmail, updateProfile, updatePassword, uploadAvatar, handleSetUser]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

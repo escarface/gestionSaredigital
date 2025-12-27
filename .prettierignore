@@ -1,0 +1,11 @@
+dist
+node_modules
+*.config.js
+*.config.ts
+public
+sw.js
+.vscode
+.git
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
