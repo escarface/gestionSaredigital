@@ -29,6 +29,9 @@ export interface Project {
   extraMembers?: number;
   icon: string;
   dueDate: string;
+  createdById?: string;
+  createdByName?: string;
+  createdByAvatar?: string;
   attachments?: ProjectAttachment[];
 }
 

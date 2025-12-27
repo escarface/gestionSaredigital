@@ -2,10 +2,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Smartphone, Monitor, Megaphone, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { Project } from '../types';
 
 const ActiveProjects: React.FC = () => {
-  const { projects, deleteProject, openProjectModal, askConfirmation } = useApp();
+  const { projects, team, deleteProject, openProjectModal, askConfirmation } = useApp();
+  const { user } = useAuth();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -29,6 +31,29 @@ const ActiveProjects: React.FC = () => {
       case 'campaign': return <Megaphone size={20} />;
       default: return <Monitor size={20} />;
     }
+  };
+
+  const getCreatorInfo = (project: Project) => {
+    let name = project.createdByName;
+    let avatar = project.createdByAvatar;
+
+    // Fallback for old projects: try to find the first member in the team list
+    if (!name && project.members && project.members.length > 0) {
+      const member = team.find(m => m.avatar === project.members[0]);
+      if (member) {
+        name = member.name;
+        avatar = member.avatar;
+      }
+    }
+
+    // Final fallback to current user if still no name (for old projects)
+    if (!name) {
+      name = user?.name || 'Admin';
+    }
+
+    const initial = name.charAt(0).toUpperCase();
+
+    return { name, avatar, initial };
   };
 
   const handleDelete = (project: Project) => {
@@ -111,20 +136,28 @@ const ActiveProjects: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center -space-x-2">
-              {project.members.map((member, idx) => (
-                <img
-                  key={idx}
-                  alt={`Team member ${idx + 1}`}
-                  className="size-8 rounded-full border-2 border-white object-cover"
-                  src={member}
-                />
-              ))}
-              {project.extraMembers && (
-                <div className="size-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-xs font-bold text-text-muted">
-                  +{project.extraMembers}
-                </div>
-              )}
+            <div className="flex items-center gap-3">
+              {(() => {
+                const { avatar, initial, name } = getCreatorInfo(project);
+                return (
+                  <>
+                    {avatar ? (
+                      <img
+                        alt={`Creator: ${name}`}
+                        className="size-8 rounded-full border-2 border-white object-cover bg-gray-200"
+                        src={avatar}
+                      />
+                    ) : (
+                      <div className="size-8 rounded-full border-2 border-white bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                        {initial}
+                      </div>
+                    )}
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-text-main">{name}</span>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         ))}

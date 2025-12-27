@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import { db } from '../services/storage';
 import { supabase } from '../services/supabase';
 import { Project, Task, TeamMember, CalendarEvent } from '../types';
+import { DEFAULT_AVATAR } from '../constants';
 import { v4 as uuidv4 } from 'uuid';
 import Toast from '../components/Toast';
 
@@ -164,7 +165,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addProject = async (projectData: Partial<Project>) => {
     const queuedFiles = (projectData as any).__queuedFiles as File[] | undefined;
-    const newProject = { ...projectData, id: uuidv4() } as Project;
+    const avatar = user?.avatar || DEFAULT_AVATAR;
+    const newProject: Project = {
+      ...projectData,
+      id: uuidv4(),
+      createdById: user?.id,
+      createdByName: user?.name,
+      createdByAvatar: avatar,
+    } as Project;
     try {
       await db.saveProject(newProject);
       // Subir archivos encolados (si hay)

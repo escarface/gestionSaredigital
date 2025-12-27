@@ -28,6 +28,9 @@ class StorageService {
       extraMembers: dbProject.extra_members || 0,
       icon: dbProject.icon,
       dueDate: dbProject.due_date,
+      createdById: dbProject.created_by || dbProject.createdById,
+      createdByName: dbProject.createdByName,
+      createdByAvatar: dbProject.createdByAvatar,
     };
   }
 
@@ -87,16 +90,39 @@ class StorageService {
 
       if (error) throw error;
 
+      const creatorIds = Array.from(new Set((data || []).map(p => p.created_by).filter(Boolean)));
+      let profilesMap: Record<string, { name: string; avatar: string | null }> = {};
+
+      if (creatorIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, name, avatar')
+          .in('id', creatorIds);
+
+        if (!profilesError && profiles) {
+          profilesMap = profiles.reduce((acc: Record<string, { name: string; avatar: string | null }>, profile) => {
+            acc[profile.id] = { name: profile.name, avatar: profile.avatar };
+            return acc;
+          }, {});
+        }
+      }
+
       // Cargar attachments para cada proyecto
       const projectsWithAttachments = await Promise.all(
         (data || []).map(async (dbProject) => {
           const project = this.mapProject(dbProject);
+          const creatorProfile = project.createdById ? profilesMap[project.createdById] : undefined;
+          const projectWithCreator = {
+            ...project,
+            createdByName: creatorProfile?.name || project.createdByName,
+            createdByAvatar: creatorProfile?.avatar || project.createdByAvatar,
+          };
           try {
             const attachments = await this.getProjectAttachments(project.id);
-            return { ...project, attachments };
+            return { ...projectWithCreator, attachments };
           } catch (e) {
             console.warn(`Error loading attachments for project ${project.id}:`, e);
-            return project;
+            return projectWithCreator;
           }
         })
       );
@@ -122,6 +148,7 @@ class StorageService {
         extra_members: project.extraMembers,
         icon: project.icon,
         due_date: project.dueDate,
+        created_by: project.createdById,
       });
 
       if (error) throw error;
@@ -148,6 +175,7 @@ class StorageService {
           extra_members: project.extraMembers,
           icon: project.icon,
           due_date: project.dueDate,
+          created_by: project.createdById,
         })
         .eq('id', project.id);
 

@@ -12,7 +12,7 @@ interface ProjectsPageProps {
 }
 
 const ProjectsPage: React.FC<ProjectsPageProps> = () => {
-  const { projects, deleteProject, openProjectModal, askConfirmation } = useApp();
+  const { projects, team, deleteProject, openProjectModal, askConfirmation } = useApp();
   const { user } = useAuth();
   const [filter, setFilter] = useState('All');
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
@@ -64,6 +64,29 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return dateStr;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const getCreatorInfo = (project: Project) => {
+    let name = project.createdByName;
+    let avatar = project.createdByAvatar;
+
+    // Fallback for old projects: try to find the first member in the team list
+    if (!name && project.members && project.members.length > 0) {
+      const member = team.find(m => m.avatar === project.members[0]);
+      if (member) {
+        name = member.name;
+        avatar = member.avatar;
+      }
+    }
+
+    // Final fallback to current user if still no name (for old projects)
+    if (!name) {
+      name = user?.name || 'Admin';
+    }
+
+    const initial = name.charAt(0).toUpperCase();
+
+    return { name, avatar, initial };
   };
 
   const filteredProjects = filter === 'All'
@@ -204,20 +227,28 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
             </div>
 
             <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-              <div className="flex items-center -space-x-2">
-                {project.members.map((member, idx) => (
-                  <img
-                    key={idx}
-                    alt={`Team member`}
-                    className="size-8 rounded-full border-2 border-white object-cover bg-gray-200"
-                    src={member}
-                  />
-                ))}
-                {project.extraMembers && (
-                  <div className="size-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-xs font-bold text-text-muted">
-                    +{project.extraMembers}
-                  </div>
-                )}
+              <div className="flex items-center gap-3">
+                {(() => {
+                  const { avatar, initial, name } = getCreatorInfo(project);
+                  return (
+                    <>
+                      {avatar ? (
+                        <img
+                          alt={`Creator: ${name}`}
+                          className="size-8 rounded-full border-2 border-white object-cover bg-gray-200"
+                          src={avatar}
+                        />
+                      ) : (
+                        <div className="size-8 rounded-full border-2 border-white bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                          {initial}
+                        </div>
+                      )}
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-text-main">{name}</span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
               <div className="flex flex-col items-end">
                 <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-0.5">Deadline</span>
