@@ -33,6 +33,11 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Ignore requests that are not http/https (chrome-extension, etc)
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
   // 1. Navigation (HTML): Network first, then fallback to cache (offline mode)
   if (request.mode === 'navigate') {
     event.respondWith(
@@ -56,7 +61,12 @@ self.addEventListener('fetch', event => {
         const fetchPromise = fetch(request).then(networkResponse => {
           if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
             const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(request, responseToCache));
+            caches.open(CACHE_NAME).then(cache => {
+              // Only cache if request is http/https
+              if (request.url.startsWith('http')) {
+                cache.put(request, responseToCache);
+              }
+            });
           }
           return networkResponse;
         }).catch(() => {/* Ignore network errors for background updates */ });

@@ -240,7 +240,7 @@ interface ProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: any) => void;
-  onAttachmentUpload?: (file: File) => Promise<void>;
+  onAttachmentUpload?: (projectId: string, file: File) => Promise<any>;
   onAttachmentDelete?: (attachmentId: string) => Promise<void>;
   onConfirmDelete?: () => void;
   initialData?: Project;
@@ -342,7 +342,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
   const isPdfFile = (fileType: string) => fileType === 'application/pdf';
 
   const handleFileInput = async (files: FileList | null) => {
-    if (!files || !onAttachmentUpload) return;
+    if (!files) return;
 
     for (const file of Array.from(files)) {
       try {
@@ -353,11 +353,18 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
           continue;
         }
 
-        if (initialData && onAttachmentUpload) {
+        if (initialData && initialData.id && onAttachmentUpload) {
+          // Proyecto existente: subir inmediatamente
+          console.log('Modals.handleFileInput uploading to existing project:', { projectId: initialData.id, fileName: file.name });
           setUploadingFile(file.name);
-          await onAttachmentUpload(file);
+          const newAttachment = await onAttachmentUpload(initialData.id, file);
+          console.log('Upload result:', newAttachment);
+          if (newAttachment) {
+            setAttachments(prev => [...prev, newAttachment]);
+          }
         } else {
           // No hay projectId aún: en creación, encolar archivos
+          console.log('Modals.handleFileInput queueing file for new project:', file.name);
           setQueuedFiles(prev => [...prev, file]);
         }
       } catch (error) {

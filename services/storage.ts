@@ -86,7 +86,22 @@ class StorageService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []).map(this.mapProject);
+
+      // Cargar attachments para cada proyecto
+      const projectsWithAttachments = await Promise.all(
+        (data || []).map(async (dbProject) => {
+          const project = this.mapProject(dbProject);
+          try {
+            const attachments = await this.getProjectAttachments(project.id);
+            return { ...project, attachments };
+          } catch (e) {
+            console.warn(`Error loading attachments for project ${project.id}:`, e);
+            return project;
+          }
+        })
+      );
+
+      return projectsWithAttachments;
     } catch (e) {
       console.warn("Supabase no disponible, usando fallback local...", e);
       return JSON.parse(localStorage.getItem('gestion_pro_projects') || '[]');

@@ -125,8 +125,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setToast({ message, type });
   };
 
-  const openProjectModal = (project?: Project) => {
-    setEditingProject(project);
+  const openProjectModal = async (project?: Project) => {
+    if (project) {
+      try {
+        // Cargar attachments cuando se abre para editar
+        const attachments = await db.getProjectAttachments(project.id);
+        setEditingProject({ ...project, attachments });
+      } catch (error) {
+        console.error('Error loading attachments:', error);
+        setEditingProject(project);
+      }
+    } else {
+      setEditingProject(undefined);
+    }
     setIsProjectModalOpen(true);
   };
 
@@ -254,17 +265,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const uploadProjectAttachment = async (projectId: string, file: File) => {
     try {
-      const attachment = await db.uploadProjectAttachment(projectId, file);
-      // Actualizar el proyecto con el nuevo attachment
-      const project = projects.find(p => p.id === projectId);
-      if (project) {
-        const attachments = project.attachments || [];
-        await editProject({ ...project, attachments: [...attachments, attachment] });
+      console.log('AppContext.uploadProjectAttachment called with:', { projectId, fileName: file?.name, fileSize: file?.size });
+      if (!projectId || !file) {
+        throw new Error(`Invalid parameters: projectId=${projectId}, file=${file?.name}`);
       }
+      const attachment = await db.uploadProjectAttachment(projectId, file);
+      // Recargar datos para actualizar attachments
+      await loadData();
       notify(`File "${file.name}" uploaded successfully`);
+      return attachment;
     } catch (e) {
       const error = e as any;
+      console.error('AppContext.uploadProjectAttachment error:', error);
       notify(error.message || "Error uploading file", "error");
+      throw e;
     }
   };
 
