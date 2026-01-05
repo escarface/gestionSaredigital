@@ -893,8 +893,16 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
               type="number"
               min="0"
               step="0.5"
-              value={estimatedHours}
-              onChange={e => setEstimatedHours(parseFloat(e.target.value) || 0)}
+              value={estimatedHours ?? ''}
+              onChange={e => {
+                const value = e.target.value;
+                setEstimatedHours(value === '' ? undefined : parseFloat(value) || 0);
+              }}
+              onBlur={e => {
+                if (e.target.value === '') {
+                  setEstimatedHours(0);
+                }
+              }}
               className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
               placeholder="0"
             />
@@ -905,8 +913,16 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
               type="number"
               min="0"
               step="0.5"
-              value={actualHours}
-              onChange={e => setActualHours(parseFloat(e.target.value) || 0)}
+              value={actualHours ?? ''}
+              onChange={e => {
+                const value = e.target.value;
+                setActualHours(value === '' ? undefined : parseFloat(value) || 0);
+              }}
+              onBlur={e => {
+                if (e.target.value === '') {
+                  setActualHours(0);
+                }
+              }}
               className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
               placeholder="0"
             />
