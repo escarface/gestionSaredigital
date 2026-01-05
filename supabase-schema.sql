@@ -390,3 +390,47 @@ COMMENT ON TABLE public.projects IS 'Project management data';
 COMMENT ON TABLE public.tasks IS 'Task tracking system';
 COMMENT ON TABLE public.team_members IS 'Team directory';
 COMMENT ON TABLE public.calendar_events IS 'Calendar and events';
+
+-- =====================================================
+-- NOTIFICATIONS TABLE
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('info', 'success', 'warning', 'error')) DEFAULT 'info',
+  related_type TEXT CHECK (related_type IN ('project', 'task', 'team', 'system')),
+  related_id TEXT,
+  read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can read own notifications"
+  ON public.notifications FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own notifications"
+  ON public.notifications FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own notifications"
+  ON public.notifications FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own notifications"
+  ON public.notifications FOR DELETE
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON public.notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_unread ON public.notifications(user_id) WHERE read = FALSE;
+CREATE INDEX IF NOT EXISTS idx_notifications_created ON public.notifications(created_at DESC);
+
+COMMENT ON TABLE public.notifications IS 'User notifications for projects, tasks, and system alerts';
