@@ -276,14 +276,14 @@ const TasksPage: React.FC = () => {
                                 {activeMenuTask === task.id && (
                                   <div 
                                     ref={menuRef}
-                                    className="absolute right-4 top-14 w-40 bg-white rounded-xl shadow-2xl border border-border-color z-30 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+                                    className="absolute right-0 top-8 w-36 bg-white rounded-xl shadow-xl border border-border-color z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <button 
                                       onClick={() => handleEditTask(task)}
-                                      className="w-full text-left px-4 py-3 text-sm font-bold hover:bg-gray-50 flex items-center gap-3 text-text-main"
+                                      className="w-full text-left px-3 py-2.5 text-xs font-bold hover:bg-gray-50 flex items-center gap-2 text-text-main"
                                     >
-                                      <Edit size={16} /> Edit
+                                      <Edit size={14} /> Edit
                                     </button>
                                     <button 
                                       onClick={() => {
@@ -294,9 +294,9 @@ const TasksPage: React.FC = () => {
                                           () => deleteTask(task.id)
                                         );
                                       }}
-                                      className="w-full text-left px-4 py-3 text-sm font-bold hover:bg-red-50 flex items-center gap-3 text-red-600 border-t border-border-color"
+                                      className="w-full text-left px-3 py-2.5 text-xs font-bold hover:bg-red-50 flex items-center gap-2 text-red-600 border-t border-border-color"
                                     >
-                                      <Trash2 size={16} /> Delete
+                                      <Trash2 size={14} /> Delete
                                     </button>
                                   </div>
                                 )}
