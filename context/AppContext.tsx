@@ -107,6 +107,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Only notify for these specific days before deadline
+    const NOTIFY_DAYS = [1, 3, 7];
+
     // Check task deadlines
     for (const task of taskList) {
       if (task.status === 'Done') continue;
@@ -116,15 +119,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const daysRemaining = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-      if (daysRemaining < 0) continue;
+      // Only notify for specific days and not for past/far deadlines
+      if (!NOTIFY_DAYS.includes(daysRemaining)) continue;
 
       try {
-        await notificationService.notifyDeadlineApproaching(
-          user.id,
-          `Task: ${task.title}`,
-          task.id,
-          daysRemaining
+        // Check if notification already exists
+        const existingNotifications = await notificationService.getNotifications(user.id);
+        const alreadyNotified = existingNotifications.some(
+          n => n.relatedId === task.id && 
+               n.title.includes('Task:') && 
+               n.message.includes(`${daysRemaining} day`)
         );
+
+        if (!alreadyNotified) {
+          await notificationService.notifyDeadlineApproaching(
+            user.id,
+            task.title,
+            task.id,
+            daysRemaining
+          );
+        }
       } catch (e) {
         // Notification might already exist
       }
@@ -139,15 +153,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const daysRemaining = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-      if (daysRemaining < 0) continue;
+      // Only notify for specific days and not for past/far deadlines
+      if (!NOTIFY_DAYS.includes(daysRemaining)) continue;
 
       try {
-        await notificationService.notifyDeadlineApproaching(
-          user.id,
-          `Project: ${project.name}`,
-          project.id,
-          daysRemaining
+        // Check if notification already exists
+        const existingNotifications = await notificationService.getNotifications(user.id);
+        const alreadyNotified = existingNotifications.some(
+          n => n.relatedId === project.id && 
+               n.title.includes('Project:') && 
+               n.message.includes(`${daysRemaining} day`)
         );
+
+        if (!alreadyNotified) {
+          await notificationService.notifyDeadlineApproaching(
+            user.id,
+            project.name,
+            project.id,
+            daysRemaining
+          );
+        }
       } catch (e) {
         // Notification might already exist
       }
