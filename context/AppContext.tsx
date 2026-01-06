@@ -7,6 +7,7 @@ import { Project, Task, TeamMember, CalendarEvent } from '../types';
 import { DEFAULT_AVATAR } from '../constants';
 import { v4 as uuidv4 } from 'uuid';
 import Toast from '../components/Toast';
+import notificationService from '../services/notifications';
 
 // Interface for project form data with optional queued files
 interface ProjectFormData extends Partial<Project> {
@@ -88,11 +89,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setTasks(t);
       setTeam(tm);
       setEvents(e);
+
+      // Check for upcoming deadlines and create notifications
+      await checkForDeadlines(t);
     } catch (error) {
       console.error("Failed to sync with VPS:", error);
       notify("Offline Mode: Sync with server failed.", 'error');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Check for upcoming task deadlines and create notifications
+  const checkForDeadlines = async (taskList: Task[]) => {
+    if (!user) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const threeDays = new Date(today);
+    threeDays.setDate(threeDays.getDate() + 3);
+
+    const weekDays = new Date(today);
+    weekDays.setDate(weekDays.getDate() + 7);
+
+    for (const task of taskList) {
+      if (task.status === 'Done') continue; // Skip completed tasks
+
+      const dueDate = new Date(task.dueDate);
+      dueDate.setHours(0, 0, 0, 0);
+
+      const daysRemaining = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+      // Only notify for upcoming deadlines (1, 3, or 7 days)
+      if (daysRemaining < 0) continue; // Past due - skip
+
+      const urgencyLevel = daysRemaining <= 1 ? 'warning' :
+                           daysRemaining <= 3 ? 'info' : 'info';
+
+      const urgencyTitle = daysRemaining === 0 ? 'Deadline Today!' :
+                          daysRemaining === 1 ? 'Deadline Tomorrow' :
+                          daysRemaining <= 3 ? `Deadline in ${daysRemaining} days` :
+                          `Deadline in ${daysRemaining} days`;
+
+      try {
+        // Check if notification already exists (simplified check)
+        await notificationService.notifyDeadlineApproaching(
+          user.id,
+          task.title,
+          task.id,
+          daysRemaining
+        );
+      } catch (e) {
+        // Notification might already exist, that's fine
+        console.debug('Deadline notification check:', e);
+      }
     }
   };
 
