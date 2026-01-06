@@ -91,7 +91,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setEvents(e);
 
       // Check for upcoming deadlines and create notifications
-      await checkForDeadlines(t);
+      await checkForDeadlines(t, p);
     } catch (error) {
       console.error("Failed to sync with VPS:", error);
       notify("Offline Mode: Sync with server failed.", 'error');
@@ -100,52 +100,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Check for upcoming task deadlines and create notifications
-  const checkForDeadlines = async (taskList: Task[]) => {
+  // Check for upcoming task and project deadlines and create notifications
+  const checkForDeadlines = async (taskList: Task[], projectList: Project[]) => {
     if (!user) return;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const threeDays = new Date(today);
-    threeDays.setDate(threeDays.getDate() + 3);
-
-    const weekDays = new Date(today);
-    weekDays.setDate(weekDays.getDate() + 7);
-
+    // Check task deadlines
     for (const task of taskList) {
-      if (task.status === 'Done') continue; // Skip completed tasks
+      if (task.status === 'Done') continue;
 
       const dueDate = new Date(task.dueDate);
       dueDate.setHours(0, 0, 0, 0);
 
       const daysRemaining = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-      // Only notify for upcoming deadlines (1, 3, or 7 days)
-      if (daysRemaining < 0) continue; // Past due - skip
-
-      const urgencyLevel = daysRemaining <= 1 ? 'warning' :
-                           daysRemaining <= 3 ? 'info' : 'info';
-
-      const urgencyTitle = daysRemaining === 0 ? 'Deadline Today!' :
-                          daysRemaining === 1 ? 'Deadline Tomorrow' :
-                          daysRemaining <= 3 ? `Deadline in ${daysRemaining} days` :
-                          `Deadline in ${daysRemaining} days`;
+      if (daysRemaining < 0) continue;
 
       try {
-        // Check if notification already exists (simplified check)
         await notificationService.notifyDeadlineApproaching(
           user.id,
-          task.title,
+          `Task: ${task.title}`,
           task.id,
           daysRemaining
         );
       } catch (e) {
-        // Notification might already exist, that's fine
-        console.debug('Deadline notification check:', e);
+        // Notification might already exist
+      }
+    }
+
+    // Check project deadlines
+    for (const project of projectList) {
+      if (project.status === 'Completed') continue;
+
+      const dueDate = new Date(project.dueDate);
+      dueDate.setHours(0, 0, 0, 0);
+
+      const daysRemaining = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (daysRemaining < 0) continue;
+
+      try {
+        await notificationService.notifyDeadlineApproaching(
+          user.id,
+          `Project: ${project.name}`,
+          project.id,
+          daysRemaining
+        );
+      } catch (e) {
+        // Notification might already exist
       }
     }
   };
