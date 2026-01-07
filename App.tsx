@@ -114,7 +114,7 @@ const AppLayout: React.FC = () => {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-10 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto px-3 md:px-6 pb-6 scrollbar-hide">
           <div className="max-w-[1200px] mx-auto pt-4">
             <Routes>
               <Route path="/" element={<Dashboard />} />
