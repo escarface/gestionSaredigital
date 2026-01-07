@@ -69,22 +69,22 @@ const AppLayout: React.FC = () => {
       </div>
 
       <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-        <header className="h-20 flex items-center justify-between px-4 md:px-8 py-4 bg-background-light/80 backdrop-blur-md sticky top-0 z-40 border-b border-transparent">
-          <div className="flex items-center gap-4">
+        <header className="h-16 flex items-center justify-between px-3 md:px-4 py-3 bg-background-light/80 backdrop-blur-md sticky top-0 z-40 border-b border-transparent">
+          <div className="flex items-center gap-3">
             <button
               className="md:hidden p-2 text-text-main hover:bg-black/5 rounded-full"
               onClick={() => setSidebarOpen(!sidebarOpen)}
             >
-              <Menu size={24} />
+              <Menu size={22} />
             </button>
             <div className="flex flex-col">
-              <h2 className="text-2xl font-bold text-text-main tracking-tight">{getPageTitle()}</h2>
+              <h2 className="text-xl font-bold text-text-main tracking-tight">{getPageTitle()}</h2>
               <div className="flex items-center gap-2">
-                <p className="text-text-muted text-sm hidden sm:block">
-                  Welcome back, {user.name}!
+                <p className="text-text-muted text-xs hidden sm:block">
+                  {user.name}
                 </p>
                 <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${user.role === 'Admin' ? 'bg-primary text-black' :
-                    user.role === 'Editor' ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-700'
+                  user.role === 'Editor' ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-700'
                   }`}>
                   {user.role}
                 </span>
@@ -92,9 +92,9 @@ const AppLayout: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 relative">
-            <div className="hidden lg:flex items-center bg-white border border-border-color rounded-full px-4 h-10 w-64 focus-within:ring-2 ring-primary/50 transition-all shadow-sm">
-              <Search className="text-text-muted" size={20} />
+          <div className="flex items-center gap-3 relative">
+            <div className="hidden lg:flex items-center bg-white border border-border-color rounded-full px-3 h-9 w-56 focus-within:ring-2 ring-primary/50 transition-all shadow-sm">
+              <Search className="text-text-muted" size={18} />
               <input
                 type="text"
                 placeholder="Search..."
@@ -107,15 +107,15 @@ const AppLayout: React.FC = () => {
             <button
               onClick={signOut}
               title="Sign Out"
-              className="size-10 rounded-full bg-white border border-border-color flex items-center justify-center text-red-600 hover:bg-red-50 transition-colors shadow-sm"
+              className="size-9 rounded-full bg-white border border-border-color flex items-center justify-center text-red-600 hover:bg-red-50 transition-colors shadow-sm"
             >
-              <LogOut size={20} />
+              <LogOut size={18} />
             </button>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-3 md:px-6 pb-6 scrollbar-hide">
-          <div className="max-w-[1200px] mx-auto pt-4">
+        <div className="flex-1 overflow-y-auto px-2 md:px-4 pb-4 scrollbar-hide">
+          <div className="mx-auto">
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/projects" element={<ProjectsPage />} />

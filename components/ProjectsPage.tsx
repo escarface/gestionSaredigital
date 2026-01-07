@@ -105,7 +105,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-300 pb-12">
+    <div className="flex flex-col gap-3 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-text-main">Projects</h2>
@@ -123,7 +123,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 pb-2">
+        <div className="flex flex-wrap gap-2">
         {filters.map(f => (
           <button
             key={f}
@@ -138,7 +138,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredProjects.map((project) => (
           <div key={project.id} className="relative group bg-white border border-border-color rounded-xl p-5 hover:border-primary/50 transition-all shadow-sm hover:shadow-md flex flex-col h-full">
             <div className="flex justify-between items-start mb-4">

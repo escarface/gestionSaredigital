@@ -2,6 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global reset - eliminate all spacing */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: "Spline Sans", sans-serif;
+  background-color: #f8f8f5;
+  color: #1c1c0d;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove default spacing from all elements */
+div, section, article, aside, header, footer, main, nav, ul, ol, li, p, h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  padding: 0;
+}
+
 /* Custom base styles */
 @layer base {
   body {

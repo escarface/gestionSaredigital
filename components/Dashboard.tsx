@@ -6,7 +6,7 @@ import PendingTasks from './PendingTasks';
 
 const Dashboard: React.FC = () => {
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in duration-300">
+    <div className="flex flex-col gap-4 animate-in fade-in duration-300">
       <KPICards />
       <ChartsSection />
       <ActiveProjects />
