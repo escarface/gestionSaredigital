@@ -245,7 +245,7 @@ const TasksPage: React.FC = () => {
                         onDragStart={(e) => handleDragStart(e, task.id)}
                         onDragEnd={handleDragEnd}
                         onClick={() => handleViewTask(task)}
-                        className={`bg-white rounded-xl border border-border-color shadow-sm hover:shadow-lg transition-all duration-200 select-none cursor-pointer ${
+                        className={`bg-white rounded-xl border border-border-color shadow-sm hover:shadow-lg transition-all duration-200 select-none cursor-pointer relative ${
                           canEdit ? 'active:cursor-grabbing' : ''
                         } ${
                           isDragging ? 'opacity-40 scale-95 rotate-2' : 'opacity-100'
