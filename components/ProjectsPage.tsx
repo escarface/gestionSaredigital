@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { Project } from '../types';
 import MeetingNotesModal from './MeetingNotesModal';
 import ProjectNotesModal from './ProjectNotesModal';
+import { db } from '../services/storage';
 
 interface ProjectsPageProps {
   onOpenNewProject?: () => void;
@@ -25,6 +26,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
   // Project Notes State
   const [isProjectNotesModalOpen, setIsProjectNotesModalOpen] = useState(false);
   const [selectedProjectForProjectNotes, setSelectedProjectForProjectNotes] = useState<Project | null>(null);
+  const [projectNotesCounts, setProjectNotesCounts] = useState<Record<string, number>>({});
 
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -38,6 +40,26 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
     setIsProjectNotesModalOpen(true);
   };
 
+  const handleCloseProjectNotes = async () => {
+    setIsProjectNotesModalOpen(false);
+    // Refresh the count for the project that was just edited
+    if (selectedProjectForProjectNotes) {
+      await loadProjectNotesCount(selectedProjectForProjectNotes.id);
+    }
+  };
+
+  const loadProjectNotesCount = async (projectId: string) => {
+    try {
+      const notes = await db.getProjectNotes(projectId);
+      setProjectNotesCounts(prev => ({
+        ...prev,
+        [projectId]: notes.length
+      }));
+    } catch (error) {
+      console.error('Error loading project notes count:', error);
+    }
+  };
+
   const canEdit = user?.role !== 'Viewer';
 
   useEffect(() => {
@@ -49,6 +71,16 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Load project notes counts when projects change
+  useEffect(() => {
+    const loadAllNoteCounts = async () => {
+      for (const project of projects) {
+        await loadProjectNotesCount(project.id);
+      }
+    };
+    loadAllNoteCounts();
+  }, [projects]);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -174,10 +206,15 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
                         e.stopPropagation();
                         handleOpenProjectNotes(project);
                       }}
-                      className="p-1.5 rounded-full hover:bg-blue-100 text-text-muted hover:text-blue-600 transition-colors"
+                      className="p-1.5 rounded-full hover:bg-blue-100 text-text-muted hover:text-blue-600 transition-colors relative"
                       title="Project Notes"
                     >
                       <FileText size={20} />
+                      {(projectNotesCounts[project.id] || 0) > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-md">
+                          {projectNotesCounts[project.id]}
+                        </span>
+                      )}
                     </button>
                     <button
                       onClick={(e) => {
@@ -294,7 +331,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
         <ProjectNotesModal
           project={selectedProjectForProjectNotes}
           isOpen={isProjectNotesModalOpen}
-          onClose={() => setIsProjectNotesModalOpen(false)}
+          onClose={handleCloseProjectNotes}
         />
       )}
     </div>
