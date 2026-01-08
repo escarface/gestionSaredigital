@@ -1,0 +1,3 @@
+# Spec Summary (Lite)
+
+Implement a comprehensive collaboration and discovery system for Gestión Pro Dashboard with two main components: (1) Task Comments with @mentions that enable contextual team discussions directly on tasks with real-time notifications, eliminating the need for external chat tools; (2) Global Search and Advanced Filtering that allows users to quickly find work items across projects and tasks, apply multi-criteria filters, and save custom views for productivity. This feature addresses two critical gaps: the lack of in-app collaboration tools and the non-functional search bar that currently creates poor UX.

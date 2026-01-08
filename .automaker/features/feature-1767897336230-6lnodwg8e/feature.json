@@ -1,0 +1,22 @@
+{
+  "category": "Uncategorized",
+  "description": "Analiza por completo el proyecto y crea los ficheros de specs necesarios para tener una vision global y perfecta del mismo. Queremos hacer cambios y necesitamos que conozcas al detalla las funciones que tenemos desarrolladas hasta ahora.",
+  "title": "Conocer Proyecto",
+  "images": [],
+  "imagePaths": [],
+  "textFilePaths": [],
+  "skipTests": true,
+  "model": "opus",
+  "thinkingLevel": "none",
+  "branchName": "main",
+  "priority": 2,
+  "planningMode": "skip",
+  "requirePlanApproval": false,
+  "dependencies": [],
+  "titleGenerating": false,
+  "status": "completed",
+  "id": "feature-1767897336230-6lnodwg8e",
+  "startedAt": "2026-01-08T18:35:44.123Z",
+  "updatedAt": "2026-01-08T18:48:42.747Z",
+  "justFinishedAt": "2026-01-08T18:48:42.747Z"
+}

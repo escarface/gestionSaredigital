@@ -86,6 +86,16 @@ export interface MeetingNote {
   createdBy?: string; // Optional, usually managed by backend
 }
 
+export interface ProjectNote {
+  id: string;
+  projectId: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt?: string;
+  createdBy?: string;
+}
+
 export interface CalendarEvent {
   id: string;
   title: string;

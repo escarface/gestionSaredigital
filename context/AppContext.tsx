@@ -191,6 +191,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, () => loadData())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_events' }, () => loadData())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'project_attachments' }, () => loadData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'project_notes' }, () => loadData())
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
             console.log('Supabase Realtime connected');

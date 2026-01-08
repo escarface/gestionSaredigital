@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "theme": "catppuccin",
+  "currentWorktree": {
+    "path": null,
+    "branch": "main"
+  },
+  "worktrees": [
+    {
+      "path": "/Users/maitellerenasobrino/Documents/development/gestión-pro-dashboard",
+      "branch": "main",
+      "isMain": true,
+      "isCurrent": true,
+      "hasWorktree": true,
+      "hasChanges": true,
+      "changedFilesCount": 8
+    }
+  ]
+}

@@ -287,6 +287,99 @@ export interface Database {
           created_at?: string
         }
       }
+      task_comments: {
+        Row: {
+          id: string
+          task_id: string
+          user_id: string
+          content: string
+          mentions: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          task_id: string
+          user_id: string
+          content: string
+          mentions?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          task_id?: string
+          user_id?: string
+          content?: string
+          mentions?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      task_activity: {
+        Row: {
+          id: string
+          task_id: string
+          user_id: string
+          action: string
+          field_name: string | null
+          old_value: string | null
+          new_value: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          task_id: string
+          user_id: string
+          action: string
+          field_name?: string | null
+          old_value?: string | null
+          new_value?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          task_id?: string
+          user_id?: string
+          action?: string
+          field_name?: string | null
+          old_value?: string | null
+          new_value?: string | null
+          created_at?: string
+        }
+      }
+      saved_views: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          entity_type: 'tasks' | 'projects'
+          filters: Json
+          is_default: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          entity_type: 'tasks' | 'projects'
+          filters?: Json
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          entity_type?: 'tasks' | 'projects'
+          filters?: Json
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

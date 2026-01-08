@@ -1,10 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Smartphone, Monitor, Megaphone, Plus, MoreHorizontal, Edit, Trash2, Calendar, Clock, StickyNote, FileIcon } from 'lucide-react';
+import { Smartphone, Monitor, Megaphone, Plus, MoreHorizontal, Edit, Trash2, Clock, StickyNote, FileIcon, FileText } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Project } from '../types';
 import MeetingNotesModal from './MeetingNotesModal';
+import ProjectNotesModal from './ProjectNotesModal';
 
 interface ProjectsPageProps {
   onOpenNewProject?: () => void;
@@ -21,11 +22,20 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const [selectedProjectForNotes, setSelectedProjectForNotes] = useState<Project | null>(null);
 
+  // Project Notes State
+  const [isProjectNotesModalOpen, setIsProjectNotesModalOpen] = useState(false);
+  const [selectedProjectForProjectNotes, setSelectedProjectForProjectNotes] = useState<Project | null>(null);
+
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleOpenNotes = (project: Project) => {
     setSelectedProjectForNotes(project);
     setIsNotesModalOpen(true);
+  };
+
+  const handleOpenProjectNotes = (project: Project) => {
+    setSelectedProjectForProjectNotes(project);
+    setIsProjectNotesModalOpen(true);
   };
 
   const canEdit = user?.role !== 'Viewer';
@@ -162,6 +172,16 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        handleOpenProjectNotes(project);
+                      }}
+                      className="p-1.5 rounded-full hover:bg-blue-100 text-text-muted hover:text-blue-600 transition-colors"
+                      title="Project Notes"
+                    >
+                      <FileText size={20} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
                         handleOpenNotes(project);
                       }}
                       className="p-1.5 rounded-full hover:bg-primary/10 text-text-muted hover:text-primary transition-colors"
@@ -267,6 +287,14 @@ const ProjectsPage: React.FC<ProjectsPageProps> = () => {
           project={selectedProjectForNotes}
           isOpen={isNotesModalOpen}
           onClose={() => setIsNotesModalOpen(false)}
+        />
+      )}
+
+      {selectedProjectForProjectNotes && (
+        <ProjectNotesModal
+          project={selectedProjectForProjectNotes}
+          isOpen={isProjectNotesModalOpen}
+          onClose={() => setIsProjectNotesModalOpen(false)}
         />
       )}
     </div>

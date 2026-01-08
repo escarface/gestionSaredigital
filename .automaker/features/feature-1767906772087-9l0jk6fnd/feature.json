@@ -1,0 +1,22 @@
+{
+  "category": "Uncategorized",
+  "description": "Hola, vamos a añadir a un nuevo theater que es la posibilidad de añadir texto dentro de cada proyecto. Es decir, queremos que en cada proyecto tener una zona o un área donde podamos añadir en una descripción del proyecto un texto más detallado que solo la descripción. Es decir, quiero poder escribir dentro de cada proyecto nota solo que sea.",
+  "title": "Texto en el proyecto",
+  "images": [],
+  "imagePaths": [],
+  "textFilePaths": [],
+  "skipTests": true,
+  "model": "opus",
+  "thinkingLevel": "none",
+  "branchName": "main",
+  "priority": 2,
+  "planningMode": "skip",
+  "requirePlanApproval": false,
+  "dependencies": [],
+  "titleGenerating": false,
+  "status": "waiting_approval",
+  "id": "feature-1767906772087-9l0jk6fnd",
+  "startedAt": "2026-01-08T21:13:55.515Z",
+  "updatedAt": "2026-01-08T21:17:45.225Z",
+  "justFinishedAt": "2026-01-08T21:17:45.225Z"
+}

@@ -1,5 +1,5 @@
 
-import { Project, Task, TeamMember, CalendarEvent, MeetingNote, ProjectAttachment } from '../types';
+import { Project, Task, TeamMember, CalendarEvent, MeetingNote, ProjectNote, ProjectAttachment } from '../types';
 import { supabase, handleSupabaseError } from './supabase';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -11,6 +11,18 @@ class StorageService {
       projectId: dbNote.project_id,
       content: dbNote.content,
       createdAt: dbNote.created_at,
+      createdBy: dbNote.created_by
+    };
+  }
+
+  private mapProjectNote(dbNote: any): ProjectNote {
+    return {
+      id: dbNote.id,
+      projectId: dbNote.project_id,
+      title: dbNote.title,
+      content: dbNote.content,
+      createdAt: dbNote.created_at,
+      updatedAt: dbNote.updated_at,
       createdBy: dbNote.created_by
     };
   }
@@ -472,6 +484,75 @@ class StorageService {
       if (error) throw error;
     } catch (e) {
       console.error("Error deleting note:", e);
+      throw e;
+    }
+  }
+
+  // --- Project Notes ---
+  async getProjectNotes(projectId: string): Promise<ProjectNote[]> {
+    try {
+      const { data, error } = await supabase
+        .from('project_notes')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data || []).map(this.mapProjectNote);
+    } catch (e) {
+      console.warn("Error fetching project notes:", e);
+      return [];
+    }
+  }
+
+  async saveProjectNote(note: Partial<ProjectNote>): Promise<ProjectNote> {
+    try {
+      const { data, error } = await supabase.from('project_notes').insert({
+        id: note.id || uuidv4(),
+        project_id: note.projectId,
+        title: note.title,
+        content: note.content,
+      }).select().single();
+
+      if (error) throw error;
+      return this.mapProjectNote(data);
+    } catch (e) {
+      console.error("Error saving project note:", e);
+      throw e;
+    }
+  }
+
+  async updateProjectNote(note: ProjectNote): Promise<ProjectNote> {
+    try {
+      const { data, error } = await supabase
+        .from('project_notes')
+        .update({
+          title: note.title,
+          content: note.content,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', note.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return this.mapProjectNote(data);
+    } catch (e) {
+      console.error("Error updating project note:", e);
+      throw e;
+    }
+  }
+
+  async deleteProjectNote(id: string) {
+    try {
+      const { error } = await supabase
+        .from('project_notes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    } catch (e) {
+      console.error("Error deleting project note:", e);
       throw e;
     }
   }
