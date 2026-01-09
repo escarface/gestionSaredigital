@@ -1,9 +1,9 @@
 
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { db } from '../services/storage';
 import { supabase } from '../services/supabase';
-import { Project, Task, TeamMember, CalendarEvent, User } from '../types';
+import { Project, Task, TeamMember, CalendarEvent, User, ProjectAttachment } from '../types';
 import { DEFAULT_AVATAR } from '../constants';
 import { v4 as uuidv4 } from 'uuid';
 import Toast from '../components/Toast';
@@ -26,7 +26,7 @@ interface AppContextType {
   addProject: (project: ProjectFormData) => Promise<void>;
   editProject: (project: Project) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
-  uploadProjectAttachment: (projectId: string, file: File) => Promise<void>;
+  uploadProjectAttachment: (projectId: string, file: File) => Promise<ProjectAttachment>;
   deleteProjectAttachment: (attachmentId: string) => Promise<void>;
   addTask: (task: Partial<Task>) => Promise<void>;
   editTask: (task: Task) => Promise<void>;
@@ -222,6 +222,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setEvents([]);
       setProfiles([]);
       setIsLoading(false);
+      return undefined;
     }
   }, [user]);
 

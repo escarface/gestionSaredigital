@@ -136,7 +136,7 @@ const TasksPage: React.FC = () => {
     const taskId = e.dataTransfer.getData('text/plain');
 
     if (taskId) {
-      updateTaskStatus(taskId, status);
+      updateTaskStatus(taskId, status as Task['status']);
     }
 
     setDraggedTaskId(null);
@@ -202,16 +202,16 @@ const TasksPage: React.FC = () => {
                 onDragOver={(e) => handleDragOver(e, col)}
                 onDrop={(e) => handleDrop(e, col)}
                 className={`flex-1 flex flex-col rounded-2xl transition-all duration-200 ${isOver
-                    ? 'bg-primary/5 border-2 border-primary border-dashed'
-                    : 'bg-gray-100/50 border border-border-color/50'
+                  ? 'bg-primary/5 border-2 border-primary border-dashed'
+                  : 'bg-gray-100/50 border border-border-color/50'
                   }`}
               >
                 {/* Column Header */}
                 <div className="flex justify-between items-center p-4 pb-3 border-b border-border-color/50">
                   <div className="flex items-center gap-3">
                     <div className={`p-1.5 rounded-lg ${col === 'Todo' ? 'bg-gray-200 text-gray-600' :
-                        col === 'In Progress' ? 'bg-primary/20 text-text-main' :
-                          'bg-green-100 text-green-700'
+                      col === 'In Progress' ? 'bg-primary/20 text-text-main' :
+                        'bg-green-100 text-green-700'
                       }`}>
                       {col === 'Todo' && <Circle size={18} />}
                       {col === 'In Progress' && <AlertCircle size={18} />}
@@ -320,9 +320,9 @@ const TasksPage: React.FC = () => {
                             <div className="flex flex-col gap-1">
                               <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider">Due Date</span>
                               <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold ${dueStatus === 'overdue' ? 'bg-red-100 text-red-700' :
-                                  dueStatus === 'today' ? 'bg-orange-100 text-orange-700' :
-                                    dueStatus === 'soon' ? 'bg-yellow-100 text-yellow-700' :
-                                      'bg-gray-100 text-text-main'
+                                dueStatus === 'today' ? 'bg-orange-100 text-orange-700' :
+                                  dueStatus === 'soon' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-gray-100 text-text-main'
                                 }`}>
                                 <Clock size={14} className={
                                   dueStatus === 'overdue' ? 'text-red-600' :
