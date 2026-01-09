@@ -135,9 +135,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Check if notification already exists
         const existingNotifications = await notificationService.getNotifications(user.id);
         const alreadyNotified = existingNotifications.some(
-          n => n.relatedId === task.id && 
-               n.title.includes('Task:') && 
-               n.message.includes(`${daysRemaining} day`)
+          n => n.relatedId === task.id &&
+            n.relatedType === 'task' &&
+            n.title === 'Deadline Approaching' &&
+            n.message.includes(`${daysRemaining} day`)
         );
 
         if (!alreadyNotified) {
@@ -169,9 +170,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Check if notification already exists
         const existingNotifications = await notificationService.getNotifications(user.id);
         const alreadyNotified = existingNotifications.some(
-          n => n.relatedId === project.id && 
-               n.title.includes('Project:') && 
-               n.message.includes(`${daysRemaining} day`)
+          n => n.relatedId === project.id &&
+            n.relatedType === 'project' &&
+            n.title === 'Deadline Approaching' &&
+            n.message.includes(`${daysRemaining} day`)
         );
 
         if (!alreadyNotified) {
