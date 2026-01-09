@@ -1,0 +1,22 @@
+{
+  "category": "Uncategorized",
+  "description": "Bueno, vamos a añadir una función que es bastante importante y es la de asignar tareas a diferentes team members. Para ello, ahora mismo, desde las tareas no se pueden asignar, es decir, habría que verificar este crew y tal vez también sería interesante poder asignar proyectos, no solo tareas a diferentes miembros del staff. Entonces, los proyectos y las tareas, si las asignamos un proyecto a una persona, las tareas tienen sido independientes, se pueden asignar como líder del proyecto a una persona y las tareas independientes a cualquier usuario del sistema.",
+  "title": "Add task and project assignment to team members",
+  "images": [],
+  "imagePaths": [],
+  "textFilePaths": [],
+  "skipTests": true,
+  "model": "sonnet",
+  "thinkingLevel": "none",
+  "branchName": "main",
+  "priority": 3,
+  "planningMode": "skip",
+  "requirePlanApproval": false,
+  "dependencies": [],
+  "titleGenerating": false,
+  "status": "verified",
+  "id": "feature-1767939874943-cwtodnbra",
+  "startedAt": "2026-01-09T07:15:29.688Z",
+  "updatedAt": "2026-01-09T07:18:09.985Z",
+  "justFinishedAt": "2026-01-09T07:18:09.985Z"
+}

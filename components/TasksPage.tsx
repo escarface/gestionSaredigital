@@ -6,7 +6,7 @@ import { NewTaskModal, TaskDetailModal } from './Modals';
 import { Task } from '../types';
 
 const TasksPage: React.FC = () => {
-  const { tasks, projects, addTask, editTask, deleteTask, updateTaskStatus, askConfirmation } = useApp();
+  const { tasks, projects, profiles, addTask, editTask, deleteTask, updateTaskStatus, askConfirmation } = useApp();
   const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -15,7 +15,7 @@ const TasksPage: React.FC = () => {
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState('All');
-  
+
   const [activeMenuTask, setActiveMenuTask] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -84,8 +84,8 @@ const TasksPage: React.FC = () => {
     return 'normal';
   };
 
-  const filteredTasks = selectedProject === 'All' 
-    ? tasks 
+  const filteredTasks = selectedProject === 'All'
+    ? tasks
     : tasks.filter(t => t.project === selectedProject);
 
   const handleAddTask = () => {
@@ -134,11 +134,11 @@ const TasksPage: React.FC = () => {
     e.preventDefault();
     if (!canEdit) return;
     const taskId = e.dataTransfer.getData('text/plain');
-    
+
     if (taskId) {
       updateTaskStatus(taskId, status);
     }
-    
+
     setDraggedTaskId(null);
     setDragOverColumn(null);
   };
@@ -158,7 +158,7 @@ const TasksPage: React.FC = () => {
             {canEdit ? 'Drag and drop tasks to update progress' : 'View only mode enabled'}
           </p>
         </div>
-        
+
         <div className="flex gap-3 w-full sm:w-auto items-center">
           <div className="relative flex-1 sm:w-56">
             <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
@@ -177,7 +177,7 @@ const TasksPage: React.FC = () => {
           </div>
 
           {canEdit && (
-            <button 
+            <button
               onClick={handleAddTask}
               className="flex items-center justify-center rounded-lg px-4 h-10 bg-primary hover:bg-[#e6e205] transition-colors text-black text-xs font-bold shadow-sm active:scale-95 duration-150 shrink-0"
             >
@@ -196,25 +196,23 @@ const TasksPage: React.FC = () => {
             const isOver = dragOverColumn === col;
 
             return (
-              <div 
-                key={col} 
+              <div
+                key={col}
                 data-column={col}
                 onDragOver={(e) => handleDragOver(e, col)}
                 onDrop={(e) => handleDrop(e, col)}
-                className={`flex-1 flex flex-col rounded-2xl transition-all duration-200 ${
-                  isOver 
-                    ? 'bg-primary/5 border-2 border-primary border-dashed' 
+                className={`flex-1 flex flex-col rounded-2xl transition-all duration-200 ${isOver
+                    ? 'bg-primary/5 border-2 border-primary border-dashed'
                     : 'bg-gray-100/50 border border-border-color/50'
-                }`}
+                  }`}
               >
                 {/* Column Header */}
                 <div className="flex justify-between items-center p-4 pb-3 border-b border-border-color/50">
                   <div className="flex items-center gap-3">
-                    <div className={`p-1.5 rounded-lg ${
-                      col === 'Todo' ? 'bg-gray-200 text-gray-600' :
-                      col === 'In Progress' ? 'bg-primary/20 text-text-main' :
-                      'bg-green-100 text-green-700'
-                    }`}>
+                    <div className={`p-1.5 rounded-lg ${col === 'Todo' ? 'bg-gray-200 text-gray-600' :
+                        col === 'In Progress' ? 'bg-primary/20 text-text-main' :
+                          'bg-green-100 text-green-700'
+                      }`}>
                       {col === 'Todo' && <Circle size={18} />}
                       {col === 'In Progress' && <AlertCircle size={18} />}
                       {col === 'Done' && <CheckCircle size={18} />}
@@ -223,7 +221,7 @@ const TasksPage: React.FC = () => {
                     <span className="bg-gray-200 text-gray-600 text-sm font-bold px-3 py-1 rounded-full">{colTasks.length}</span>
                   </div>
                   {canEdit && (
-                    <button 
+                    <button
                       onClick={handleAddTask}
                       className="text-text-muted hover:text-text-main hover:bg-white/50 p-2 rounded-lg transition-colors"
                     >
@@ -237,23 +235,20 @@ const TasksPage: React.FC = () => {
                   {colTasks.map(task => {
                     const isDragging = draggedTaskId === task.id;
                     const dueStatus = getDueStatus(task.dueDate);
-                    
+
                     return (
-                      <div 
+                      <div
                         key={task.id}
                         draggable={canEdit}
                         onDragStart={(e) => handleDragStart(e, task.id)}
                         onDragEnd={handleDragEnd}
                         onClick={() => handleViewTask(task)}
-                        className={`bg-white rounded-xl border border-border-color shadow-sm hover:shadow-lg transition-all duration-200 select-none cursor-pointer relative ${
-                          canEdit ? 'active:cursor-grabbing' : ''
-                        } ${
-                          isDragging ? 'opacity-40 scale-95 rotate-2' : 'opacity-100'
-                        } ${
-                          dueStatus === 'overdue' ? 'border-red-300 bg-red-50/30' :
-                          dueStatus === 'today' ? 'border-orange-300 bg-orange-50/30' :
-                          ''
-                        }`}
+                        className={`bg-white rounded-xl border border-border-color shadow-sm hover:shadow-lg transition-all duration-200 select-none cursor-pointer relative ${canEdit ? 'active:cursor-grabbing' : ''
+                          } ${isDragging ? 'opacity-40 scale-95 rotate-2' : 'opacity-100'
+                          } ${dueStatus === 'overdue' ? 'border-red-300 bg-red-50/30' :
+                            dueStatus === 'today' ? 'border-orange-300 bg-orange-50/30' :
+                              ''
+                          }`}
                       >
                         <div className="p-5">
                           {/* Header with priority and menu */}
@@ -263,7 +258,7 @@ const TasksPage: React.FC = () => {
                             </span>
                             {canEdit && (
                               <>
-                                <button 
+                                <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setActiveMenuTask(activeMenuTask === task.id ? null : task.id);
@@ -274,18 +269,18 @@ const TasksPage: React.FC = () => {
                                 </button>
 
                                 {activeMenuTask === task.id && (
-                                  <div 
+                                  <div
                                     ref={menuRef}
                                     className="absolute right-0 top-8 w-36 bg-white rounded-xl shadow-xl border border-border-color z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <button 
+                                    <button
                                       onClick={() => handleEditTask(task)}
                                       className="w-full text-left px-3 py-2.5 text-xs font-bold hover:bg-gray-50 flex items-center gap-2 text-text-main"
                                     >
                                       <Edit size={14} /> Edit
                                     </button>
-                                    <button 
+                                    <button
                                       onClick={() => {
                                         setActiveMenuTask(null);
                                         askConfirmation(
@@ -303,7 +298,7 @@ const TasksPage: React.FC = () => {
                               </>
                             )}
                           </div>
-                          
+
                           {/* Title */}
                           <h4 className="font-bold text-text-main text-lg leading-snug mb-2">{task.title}</h4>
 
@@ -324,23 +319,36 @@ const TasksPage: React.FC = () => {
                           <div className="flex justify-between items-center pt-4 border-t border-gray-100">
                             <div className="flex flex-col gap-1">
                               <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider">Due Date</span>
-                              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold ${
-                                dueStatus === 'overdue' ? 'bg-red-100 text-red-700' :
-                                dueStatus === 'today' ? 'bg-orange-100 text-orange-700' :
-                                dueStatus === 'soon' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-gray-100 text-text-main'
-                              }`}>
+                              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold ${dueStatus === 'overdue' ? 'bg-red-100 text-red-700' :
+                                  dueStatus === 'today' ? 'bg-orange-100 text-orange-700' :
+                                    dueStatus === 'soon' ? 'bg-yellow-100 text-yellow-700' :
+                                      'bg-gray-100 text-text-main'
+                                }`}>
                                 <Clock size={14} className={
                                   dueStatus === 'overdue' ? 'text-red-600' :
-                                  dueStatus === 'today' ? 'text-orange-600' :
-                                  'text-primary'
+                                    dueStatus === 'today' ? 'text-orange-600' :
+                                      'text-primary'
                                 } />
                                 <span>{formatDate(task.dueDate)}</span>
                                 {dueStatus === 'today' && <span className="text-[10px]">(Today!)</span>}
                                 {dueStatus === 'soon' && <span className="text-[10px]">(Soon)</span>}
                               </div>
                             </div>
-                            {task.assignee ? (
+                            {task.assignedUser ? (
+                              <div className="flex items-center gap-2">
+                                <div className="flex flex-col items-end">
+                                  <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider">Assigned</span>
+                                  <span className="text-xs text-text-main font-bold">{task.assignedUser.name}</span>
+                                </div>
+                                {task.assignedUser.avatar ? (
+                                  <img src={task.assignedUser.avatar} alt={task.assignedUser.name} className="w-9 h-9 rounded-full object-cover shadow-md ring-2 ring-white" />
+                                ) : (
+                                  <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-text-main ring-2 ring-white">
+                                    {task.assignedUser.name.charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
+                            ) : task.assignee ? (
                               <div className="flex items-center gap-2">
                                 <span className="text-xs text-text-muted font-bold">Assigned</span>
                                 <img src={task.assignee} alt="Assignee" className="w-9 h-9 rounded-full object-cover shadow-md ring-2 ring-white" />
@@ -374,12 +382,12 @@ const TasksPage: React.FC = () => {
                       </div>
                     );
                   })}
-                  
+
                   {canEdit && colTasks.length === 0 && (
                     <div className="h-40 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center text-text-muted text-sm font-medium gap-2">
                       <Plus size={24} className="opacity-50" />
                       <span>Drop items here</span>
-                      <button 
+                      <button
                         onClick={handleAddTask}
                         className="text-primary font-bold text-sm hover:underline mt-2"
                       >
@@ -389,7 +397,7 @@ const TasksPage: React.FC = () => {
                   )}
 
                   {canEdit && (
-                    <button 
+                    <button
                       onClick={handleAddTask}
                       className="w-full py-4 text-sm font-bold text-text-muted hover:text-text-main hover:bg-white/60 rounded-xl transition-colors border border-dashed border-border-color flex items-center justify-center gap-2"
                     >
@@ -404,11 +412,12 @@ const TasksPage: React.FC = () => {
         </div>
       </div>
 
-      <NewTaskModal 
-        isOpen={isModalOpen} 
+      <NewTaskModal
+        isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleModalSubmit}
         projects={projects}
+        users={profiles}
         initialData={editingTask}
       />
 

@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar as CalendarIcon, AlertTriangle, Clock, Briefcase, User as UserIcon, Tag, Edit3, CheckCircle2, Upload, Download, Trash2, Eye, FileText, Image as ImageIcon, File } from 'lucide-react';
 import { AVATARS } from '../constants';
-import { Project, Task, ProjectAttachment } from '../types';
+import { Project, Task, ProjectAttachment, User } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { UserSelector } from './UserSelector';
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -117,15 +118,32 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
             </div>
             <div className="space-y-2">
               <span className="flex items-center gap-2 text-[10px] font-bold text-text-muted uppercase tracking-wider">
-                <UserIcon size={14} className="text-primary" /> Assignee
+                <UserIcon size={14} className="text-primary" /> Assigned To
               </span>
               <div className="flex items-center gap-2.5">
-                {task.assignee ? (
-                  <img src={task.assignee} alt="Assignee" className="size-7 rounded-full object-cover shadow-sm ring-2 ring-white" />
+                {task.assignedUser ? (
+                  <>
+                    <img
+                      src={task.assignedUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(task.assignedUser.name)}&background=random`}
+                      alt={task.assignedUser.name}
+                      className="size-7 rounded-full object-cover shadow-sm ring-2 ring-white"
+                    />
+                    <div>
+                      <span className="text-sm font-bold text-text-main block">{task.assignedUser.name}</span>
+                      <span className="text-xs text-text-muted">{task.assignedUser.role}</span>
+                    </div>
+                  </>
+                ) : task.assignee ? (
+                  <>
+                    <img src={task.assignee} alt="Assignee" className="size-7 rounded-full object-cover shadow-sm ring-2 ring-white" />
+                    <span className="text-sm font-bold text-text-main">Assigned (Legacy)</span>
+                  </>
                 ) : (
-                  <div className="size-7 rounded-full bg-gray-200 border border-gray-300" />
+                  <>
+                    <div className="size-7 rounded-full bg-gray-200 border border-gray-300" />
+                    <span className="text-sm font-bold text-text-muted">Unassigned</span>
+                  </>
                 )}
-                <span className="text-sm font-bold text-text-main">{task.assignee ? 'Responsible' : 'Unassigned'}</span>
               </div>
             </div>
             <div className="space-y-2">
@@ -756,10 +774,11 @@ interface NewTaskModalProps {
   onClose: () => void;
   onSubmit: (data: Partial<Task>) => void;
   projects: Project[];
+  users?: User[];
   initialData?: Task;
 }
 
-export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onSubmit, projects, initialData }) => {
+export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onSubmit, projects, users = [], initialData }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [project, setProject] = useState('');
@@ -768,6 +787,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
   const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]);
   const [estimatedHours, setEstimatedHours] = useState<number>(0);
   const [actualHours, setActualHours] = useState<number>(0);
+  const [assignedTo, setAssignedTo] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (initialData) {
@@ -779,6 +799,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
       setDueDate(initialData.dueDate);
       setEstimatedHours(initialData.estimatedHours || 0);
       setActualHours(initialData.actualHours || 0);
+      setAssignedTo(initialData.assignedTo);
     } else {
       setTitle('');
       setDescription('');
@@ -788,6 +809,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
       setDueDate(new Date().toISOString().split('T')[0]);
       setEstimatedHours(0);
       setActualHours(0);
+      setAssignedTo(undefined);
     }
   }, [initialData, isOpen]);
 
@@ -801,7 +823,8 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
       status,
       dueDate,
       estimatedHours,
-      actualHours
+      actualHours,
+      assignedTo
     });
     if (!initialData) {
       setTitle('');
@@ -809,6 +832,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
       setProject('');
       setEstimatedHours(0);
       setActualHours(0);
+      setAssignedTo(undefined);
     }
     onClose();
   };
@@ -837,18 +861,29 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
             placeholder="Detailed description of the task..."
           />
         </div>
+        <div>
+          <label className="block text-xs font-bold text-text-muted uppercase mb-1">Project</label>
+          <select
+            value={project}
+            onChange={e => setProject(e.target.value)}
+            className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
+          >
+            <option value="">Select Project</option>
+            {projects.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-text-muted uppercase mb-1">Assigned To</label>
+          <UserSelector
+            users={users}
+            selectedUserIds={assignedTo ? [assignedTo] : []}
+            onSelect={(userId) => setAssignedTo(userId)}
+            onRemove={() => setAssignedTo(undefined)}
+            mode="single"
+            placeholder="Select assignee (optional)"
+          />
+        </div>
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold text-text-muted uppercase mb-1">Project</label>
-            <select
-              value={project}
-              onChange={e => setProject(e.target.value)}
-              className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
-            >
-              <option value="">Select Project</option>
-              {projects.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
-            </select>
-          </div>
           <div>
             <label className="block text-xs font-bold text-text-muted uppercase mb-1">Priority</label>
             <select
@@ -861,8 +896,6 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
               <option value="High">High</option>
             </select>
           </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-text-muted uppercase mb-1">Status</label>
             <select
@@ -875,6 +908,8 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
               <option value="Done">Done</option>
             </select>
           </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-text-muted uppercase mb-1">Due Date</label>
             <input
@@ -884,6 +919,9 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onS
               onChange={e => setDueDate(e.target.value)}
               className="w-full rounded-xl border-border-color bg-background-light px-4 py-3 text-sm font-medium focus:border-primary focus:ring-primary"
             />
+          </div>
+          <div>
+            {/* Spacer to maintain grid */}
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">

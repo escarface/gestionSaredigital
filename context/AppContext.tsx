@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useCall
 import { useAuth } from './AuthContext';
 import { db } from '../services/storage';
 import { supabase } from '../services/supabase';
-import { Project, Task, TeamMember, CalendarEvent } from '../types';
+import { Project, Task, TeamMember, CalendarEvent, User } from '../types';
 import { DEFAULT_AVATAR } from '../constants';
 import { v4 as uuidv4 } from 'uuid';
 import Toast from '../components/Toast';
@@ -19,6 +19,7 @@ interface AppContextType {
   tasks: Task[];
   team: TeamMember[];
   events: CalendarEvent[];
+  profiles: User[];
   isLoading: boolean;
 
   // Actions
@@ -35,6 +36,11 @@ interface AppContextType {
   addTeamMember: (member: Partial<TeamMember>) => Promise<void>;
   removeTeamMember: (id: string) => Promise<void>;
   notify: (msg: string, type?: 'success' | 'error') => void;
+
+  // Assignment actions
+  assignUserToProject: (projectId: string, userId: string) => Promise<void>;
+  removeUserFromProject: (assignmentId: string) => Promise<void>;
+  updateProjectLeader: (projectId: string, leaderId: string | null) => Promise<void>;
 
   // Modal State
   isProjectModalOpen: boolean;
@@ -56,6 +62,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [profiles, setProfiles] = useState<User[]>([]);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -79,16 +86,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return; // Guard: Don't fetch if not logged in
     try {
       setIsLoading(true);
-      const [p, t, tm, e] = await Promise.all([
+      const [p, t, tm, e, profs] = await Promise.all([
         db.getProjects(),
         db.getTasks(),
         db.getTeam(),
-        db.getEvents()
+        db.getEvents(),
+        db.getProfiles()
       ]);
       setProjects(p);
       setTasks(t);
       setTeam(tm);
       setEvents(e);
+      setProfiles(profs);
 
       // Check for upcoming deadlines and create notifications
       await checkForDeadlines(t, p);
@@ -192,6 +201,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_events' }, () => loadData())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'project_attachments' }, () => loadData())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'project_notes' }, () => loadData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'project_assignments' }, () => loadData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => loadData())
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
             console.log('Supabase Realtime connected');
@@ -207,6 +218,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setTasks([]);
       setTeam([]);
       setEvents([]);
+      setProfiles([]);
       setIsLoading(false);
     }
   }, [user]);
@@ -392,12 +404,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e) { notify("Error deleting attachment", "error"); }
   };
 
+  // Assignment actions
+  const assignUserToProject = async (projectId: string, userId: string) => {
+    try {
+      await db.assignUserToProject(projectId, userId);
+      await loadData();
+      notify('User assigned to project successfully', 'success');
+    } catch (error) {
+      notify('Failed to assign user to project', 'error');
+      throw error;
+    }
+  };
+
+  const removeUserFromProject = async (assignmentId: string) => {
+    try {
+      await db.removeUserFromProject(assignmentId);
+      await loadData();
+      notify('User removed from project', 'success');
+    } catch (error) {
+      notify('Failed to remove user from project', 'error');
+      throw error;
+    }
+  };
+
+  const updateProjectLeader = async (projectId: string, leaderId: string | null) => {
+    try {
+      await db.updateProjectLeader(projectId, leaderId);
+      await loadData();
+      notify('Project leader updated', 'success');
+    } catch (error) {
+      notify('Failed to update project leader', 'error');
+      throw error;
+    }
+  };
+
   const value = useMemo(
     () => ({
       projects,
       tasks,
       team,
       events,
+      profiles,
       isLoading,
       addProject,
       editProject,
@@ -412,6 +459,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addTeamMember,
       removeTeamMember,
       notify,
+      assignUserToProject,
+      removeUserFromProject,
+      updateProjectLeader,
       isProjectModalOpen,
       editingProject,
       openProjectModal,
@@ -425,6 +475,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       tasks,
       team,
       events,
+      profiles,
       isLoading,
       isProjectModalOpen,
       editingProject,

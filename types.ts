@@ -25,6 +25,15 @@ export interface ProjectAttachment {
   created_at: string;
 }
 
+export interface ProjectAssignment {
+  id: string;
+  project_id: string;
+  user_id: string;
+  assigned_at: string;
+  assigned_by?: string;
+  user?: User;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -33,7 +42,7 @@ export interface Project {
   progress: number;
   status: 'In Progress' | 'Review' | 'Planning' | 'Completed';
   statusColor: string;
-  members: string[]; // URLs
+  members: string[]; // LEGACY - URLs for backwards compatibility
   extraMembers?: number;
   icon: string;
   dueDate: string;
@@ -41,6 +50,11 @@ export interface Project {
   createdByName?: string;
   createdByAvatar?: string;
   attachments?: ProjectAttachment[];
+  // NEW FIELDS for assignments
+  projectLeaderId?: string;
+  projectLeader?: User;
+  assignments?: ProjectAssignment[];
+  assignedUsers?: User[];
 }
 
 export interface Task {
@@ -51,9 +65,12 @@ export interface Task {
   dueDate: string;
   priority: 'High' | 'Medium' | 'Low';
   status: 'Todo' | 'In Progress' | 'Done';
-  assignee?: string;
+  assignee?: string; // LEGACY - for backwards compatibility
   estimatedHours?: number;
   actualHours?: number;
+  // NEW FIELDS for assignments
+  assignedTo?: string; // User ID (FK to profiles)
+  assignedUser?: User;
 }
 
 export interface KPI {

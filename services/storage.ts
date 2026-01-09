@@ -1,5 +1,5 @@
 
-import { Project, Task, TeamMember, CalendarEvent, MeetingNote, ProjectNote, ProjectAttachment } from '../types';
+import { Project, Task, TeamMember, CalendarEvent, MeetingNote, ProjectNote, ProjectAttachment, User, ProjectAssignment } from '../types';
 import { supabase, handleSupabaseError } from './supabase';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -96,27 +96,81 @@ class StorageService {
   // --- Projects ---
   async getProjects(): Promise<Project[]> {
     try {
-      // Optimized: Use JOINs to fetch all data in a single query
-      const { data, error } = await supabase
-        .from('projects')
-        .select(`
-          *,
-          profiles!projects_created_by_fkey(id, name, avatar),
-          project_attachments(*)
-        `)
-        .order('created_at', { ascending: false });
+      // Try with new assignment fields first (if migrations are done)
+      let data, error;
+
+      try {
+        const result = await supabase
+          .from('projects')
+          .select(`
+            *,
+            profiles!projects_created_by_fkey(id, name, avatar),
+            project_leader:profiles!projects_project_leader_id_fkey(id, name, avatar, email, role),
+            project_assignments(
+              id,
+              user_id,
+              assigned_at,
+              assigned_by,
+              user:profiles!project_assignments_user_id_fkey(id, name, avatar, email, role)
+            ),
+            project_attachments(*)
+          `)
+          .order('created_at', { ascending: false });
+
+        data = result.data;
+        error = result.error;
+      } catch (joinError) {
+        // If JOINs fail (migrations not run), fall back to basic query
+        console.warn("Assignment fields not available yet, using basic query:", joinError);
+        const result = await supabase
+          .from('projects')
+          .select(`
+            *,
+            profiles!projects_created_by_fkey(id, name, avatar),
+            project_attachments(*)
+          `)
+          .order('created_at', { ascending: false });
+
+        data = result.data;
+        error = result.error;
+      }
 
       if (error) throw error;
 
       return (data || []).map((dbProject: any) => {
         const project = this.mapProject(dbProject);
         const creatorProfile = dbProject.profiles;
+        const assignments = dbProject.project_assignments || [];
 
         return {
           ...project,
           createdByName: creatorProfile?.name || 'Unknown User',
           createdByAvatar: creatorProfile?.avatar || 'https://ui-avatars.com/api/?background=random&name=Unknown',
           attachments: (dbProject.project_attachments || []).map(this.mapProjectAttachment.bind(this)),
+          // New assignment fields (only if migrations are done)
+          projectLeaderId: dbProject.project_leader_id,
+          projectLeader: dbProject.project_leader ? {
+            id: dbProject.project_leader.id,
+            name: dbProject.project_leader.name,
+            email: dbProject.project_leader.email,
+            avatar: dbProject.project_leader.avatar,
+            role: dbProject.project_leader.role,
+          } : undefined,
+          assignments: assignments.map((a: any) => ({
+            id: a.id,
+            project_id: dbProject.id,
+            user_id: a.user_id,
+            assigned_at: a.assigned_at,
+            assigned_by: a.assigned_by,
+            user: a.user ? {
+              id: a.user.id,
+              name: a.user.name,
+              email: a.user.email,
+              avatar: a.user.avatar,
+              role: a.user.role,
+            } : undefined,
+          })),
+          assignedUsers: assignments.map((a: any) => a.user).filter(Boolean),
         };
       });
     } catch (e) {
@@ -167,6 +221,7 @@ class StorageService {
           icon: project.icon,
           due_date: project.dueDate,
           created_by: project.createdById,
+          project_leader_id: project.projectLeaderId,
         })
         .eq('id', project.id);
 
@@ -230,13 +285,48 @@ class StorageService {
   // --- Tasks ---
   async getTasks(): Promise<Task[]> {
     try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Try with assignment field first (if migration is done)
+      let data, error;
+
+      try {
+        const result = await supabase
+          .from('tasks')
+          .select(`
+            *,
+            assigned_user:profiles!tasks_assigned_to_fkey(id, name, avatar, email, role)
+          `)
+          .order('created_at', { ascending: false });
+
+        data = result.data;
+        error = result.error;
+      } catch (joinError) {
+        // If JOIN fails (migration not run), fall back to basic query
+        console.warn("assigned_to field not available yet, using basic query:", joinError);
+        const result = await supabase
+          .from('tasks')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        data = result.data;
+        error = result.error;
+      }
 
       if (error) throw error;
-      return (data || []).map(this.mapTask);
+
+      return (data || []).map((dbTask: any) => {
+        const task = this.mapTask(dbTask);
+        return {
+          ...task,
+          assignedTo: dbTask.assigned_to,
+          assignedUser: dbTask.assigned_user ? {
+            id: dbTask.assigned_user.id,
+            name: dbTask.assigned_user.name,
+            email: dbTask.assigned_user.email,
+            avatar: dbTask.assigned_user.avatar,
+            role: dbTask.assigned_user.role,
+          } : undefined,
+        };
+      });
     } catch (e) {
       return JSON.parse(localStorage.getItem('gestion_pro_tasks') || '[]');
     }
@@ -252,7 +342,8 @@ class StorageService {
         due_date: task.dueDate,
         priority: task.priority,
         status: task.status,
-        assignee: task.assignee,
+        assignee: task.assignee, // Legacy
+        assigned_to: task.assignedTo, // NEW
         estimated_hours: task.estimatedHours || 0,
         actual_hours: task.actualHours || 0,
       });
@@ -276,7 +367,8 @@ class StorageService {
           due_date: task.dueDate,
           priority: task.priority,
           status: task.status,
-          assignee: task.assignee,
+          assignee: task.assignee, // Legacy
+          assigned_to: task.assignedTo, // NEW
           estimated_hours: task.estimatedHours || 0,
           actual_hours: task.actualHours || 0,
         })
@@ -734,7 +826,7 @@ class StorageService {
       // Eliminar archivos de Storage
       if (attachments && attachments.length > 0) {
         const filePaths: string[] = [];
-        
+
         for (const attachment of attachments) {
           try {
             const fileUrl = new URL(attachment.file_url);
@@ -769,6 +861,74 @@ class StorageService {
       if (deleteDbError) throw deleteDbError;
     } catch (e) {
       console.error('Error deleting project attachments cascade:', e);
+      throw e;
+    }
+  }
+
+  // --- User Profiles & Assignments ---
+
+  // Get all user profiles for assignment selectors
+  async getProfiles(): Promise<User[]> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, email, avatar, role')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      console.warn('Error fetching profiles:', e);
+      return [];
+    }
+  }
+
+  // Assign user to project
+  async assignUserToProject(projectId: string, userId: string): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { error } = await supabase
+        .from('project_assignments')
+        .insert({
+          project_id: projectId,
+          user_id: userId,
+          assigned_by: user?.id,
+        });
+
+      if (error) throw error;
+    } catch (e) {
+      console.error('Error assigning user to project:', e);
+      throw e;
+    }
+  }
+
+  // Remove user from project
+  async removeUserFromProject(assignmentId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('project_assignments')
+        .delete()
+        .eq('id', assignmentId);
+
+      if (error) throw error;
+    } catch (e) {
+      console.error('Error removing user from project:', e);
+      throw e;
+    }
+  }
+
+  // Update project leader
+  async updateProjectLeader(projectId: string, leaderId: string | null): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ project_leader_id: leaderId })
+        .eq('id', projectId);
+
+      if (error) throw error;
+    } catch (e) {
+      console.error('Error updating project leader:', e);
       throw e;
     }
   }
