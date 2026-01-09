@@ -13,6 +13,7 @@ import NotificationCenter from './components/NotificationCenter';
 import { AppProvider, useApp } from './context/AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProjectModal, ConfirmationModal } from './components/Modals';
+import { Project } from './types';
 
 const AppLayout: React.FC = () => {
   const { user, signOut } = useAuth();
